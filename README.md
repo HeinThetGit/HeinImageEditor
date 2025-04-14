@@ -7,4 +7,5 @@ Features:
   Frame (vignette)
   More to be added in future
 
-  ![Image](https://github.com/user-attachments/assets/33c56aa3-ea08-46c1-9f88-6063c80c051e)
+  ![Image](https://github.com/HeinThetGit/HeinImageEditor/blob/master/addons/image_editor/screenshots/adjustment.jpg)
+  
