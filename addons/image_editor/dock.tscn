@@ -1,0 +1,590 @@
+[gd_scene load_steps=12 format=3 uid="uid://40xa4aqbciby"]
+
+[ext_resource type="Script" uid="uid://cesn513em6x4l" path="res://addons/image_editor/dock.gd" id="1_mup7s"]
+[ext_resource type="Texture2D" uid="uid://bgcjbs81r16vl" path="res://icon.svg" id="2_g6rxj"]
+[ext_resource type="Shader" uid="uid://c6juifocpjdrh" path="res://brightnessr.gdshader" id="3_s85rn"]
+[ext_resource type="Texture2D" uid="uid://buv53ooy0ctid" path="res://islands1.jpg" id="4_lomty"]
+[ext_resource type="Shader" uid="uid://d3widaxnx6mhv" path="res://addons/image_editor/Vignette.gdshader" id="4_qkhg3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qkhg3"]
+bg_color = Color(1, 0, 0.0166664, 0.192157)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qkhg3"]
+shader = ExtResource("3_s85rn")
+shader_parameter/brightness = 0.0
+shader_parameter/contrast = 0.826772
+shader_parameter/saturation = 3.77451
+shader_parameter/tint_color = Color(1, 1, 1, 1)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_lomty"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_qkhg3"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_qkhg3"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qaxmh"]
+shader = ExtResource("4_qkhg3")
+shader_parameter/softness_x = 0.124309
+shader_parameter/softness_y = 0.124309
+
+[node name="ImageEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mup7s")
+metadata/_edit_vertical_guides_ = [-47.0, -118.0, -565.0, 669.0]
+
+[node name="FileDialog" type="FileDialog" parent="."]
+title = "Open a File"
+ok_button_text = "Open"
+mode_overrides_title = false
+file_mode = 0
+filters = PackedStringArray("*.png", "*.jpg", "*.jpeg")
+
+[node name="saveDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+auto_translate_mode = 1
+title = "Open a File"
+mode_overrides_title = false
+filters = PackedStringArray("*.png", "*.jpg", "*.jpeg")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 5
+
+[node name="menuBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="newButton" type="Button" parent="VBoxContainer/menuBar"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "New"
+
+[node name="LoadButton" type="Button" parent="VBoxContainer/menuBar"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Open"
+
+[node name="SaveButton" type="Button" parent="VBoxContainer/menuBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Save"
+
+[node name="SaveAs" type="Button" parent="VBoxContainer/menuBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Save As"
+
+[node name="revert" type="Button" parent="VBoxContainer/menuBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Reset"
+
+[node name="noti" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "jsns"
+horizontal_alignment = 1
+
+[node name="zoom" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="info" type="Label" parent="VBoxContainer/zoom"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "zoom"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="fit" type="Button" parent="VBoxContainer/zoom"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "Fit"
+
+[node name="zoomSlider" type="HSlider" parent="VBoxContainer/zoom"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.05
+max_value = 5.0
+step = 0.0
+value = 1.2
+
+[node name="background" type="ColorRect" parent="VBoxContainer"]
+unique_name_in_owner = true
+clip_children = 2
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.0886252, 0.0886252, 0.0886252, 1)
+
+[node name="view" type="TextureRect" parent="VBoxContainer/background"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -50.0
+offset_top = -50.0
+offset_right = 50.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(50, 50)
+size_flags_horizontal = 6
+size_flags_vertical = 6
+mouse_filter = 2
+texture = ExtResource("2_g6rxj")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="VBoxContainer/background"]
+unique_name_in_owner = true
+layout_mode = 1
+offset_right = 2048.0
+offset_bottom = 2048.0
+metadata/_edit_lock_ = true
+
+[node name="cropRect" type="Panel" parent="VBoxContainer/background/SubViewportContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_qkhg3")
+
+[node name="viewport" type="SubViewport" parent="VBoxContainer/background/SubViewportContainer"]
+unique_name_in_owner = true
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(2048, 2048)
+render_target_clear_mode = 1
+render_target_update_mode = 4
+
+[node name="canvas" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport"]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_qkhg3")
+offset_right = 128.0
+offset_bottom = 128.0
+size_flags_horizontal = 6
+size_flags_vertical = 6
+mouse_filter = 2
+texture = ExtResource("4_lomty")
+expand_mode = 1
+metadata/_edit_lock_ = true
+
+[node name="paintLayer" type="SubViewportContainer" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas"]
+unique_name_in_owner = true
+material = SubResource("CanvasItemMaterial_lomty")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="paintViewPort" type="SubViewport" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas/paintLayer"]
+unique_name_in_owner = true
+transparent_bg = true
+handle_input_locally = false
+gui_disable_input = true
+size = Vector2i(128, 128)
+render_target_clear_mode = 1
+render_target_update_mode = 4
+
+[node name="brush" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas/paintLayer/paintViewPort"]
+unique_name_in_owner = true
+material = SubResource("CanvasItemMaterial_qkhg3")
+offset_left = 76.0
+offset_top = 45.0
+offset_right = 143.0
+offset_bottom = 126.0
+texture = SubResource("CanvasTexture_qkhg3")
+
+[node name="vignette" type="ColorRect" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas"]
+unique_name_in_owner = true
+visible = false
+material = SubResource("ShaderMaterial_qaxmh")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.99, 0.99, 0.99, 1)
+
+[node name="TabContainer" type="TabContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 4
+
+[node name="color" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="brightness" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/brightness"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "brightness"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="brightnessSlider" type="HSlider" parent="VBoxContainer/TabContainer/color/brightness"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+max_value = 5.0
+step = 0.0
+value = 1.0
+
+[node name="contrast" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/contrast"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "contrast"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="contrastValue" type="HSlider" parent="VBoxContainer/TabContainer/color/contrast"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+max_value = 5.0
+step = 0.0
+value = 1.0
+
+[node name="saturation" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/saturation"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "saturation"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="saturationValue" type="HSlider" parent="VBoxContainer/TabContainer/color/saturation"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+max_value = 5.0
+step = 0.0
+value = 1.0
+
+[node name="tint" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/tint"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Tint"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="tintColor" type="ColorPickerButton" parent="VBoxContainer/TabContainer/color/tint"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(1, 1, 1, 1)
+
+[node name="frame" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="vignette" type="HBoxContainer" parent="VBoxContainer/TabContainer/frame"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/frame/vignette"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "vignette"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="VBoxContainer/TabContainer/frame/vignette"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+alignment = 0
+color = Color(1, 1, 1, 1)
+
+[node name="HSlider" type="HSlider" parent="VBoxContainer/TabContainer/frame/vignette"]
+custom_minimum_size = Vector2(200, 30)
+layout_mode = 2
+max_value = 0.5
+step = 0.0
+
+[node name="resize" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="resize" type="HBoxContainer" parent="VBoxContainer/TabContainer/resize"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/resize/resize"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "resize"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="width" type="LineEdit" parent="VBoxContainer/TabContainer/resize/resize"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "width"
+
+[node name="height" type="LineEdit" parent="VBoxContainer/TabContainer/resize/resize"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "height"
+
+[node name="resizeButton" type="Button" parent="VBoxContainer/TabContainer/resize/resize"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "ok"
+
+[node name="crop" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 0
+metadata/_tab_index = 3
+
+[node name="left" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/left"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "left:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="cropLeft" type="HSlider" parent="VBoxContainer/TabContainer/crop/left"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.0
+
+[node name="right" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/right"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "right:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="cropRight" type="HSlider" parent="VBoxContainer/TabContainer/crop/right"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.0
+value = 1.0
+
+[node name="top" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/top"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "top:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="cropTop" type="HSlider" parent="VBoxContainer/TabContainer/crop/top"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.0
+
+[node name="buttom" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/buttom"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "buttom:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="cropButtom" type="HSlider" parent="VBoxContainer/TabContainer/crop/buttom"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.0
+value = 1.0
+
+[node name="applyCrop" type="Button" parent="VBoxContainer/TabContainer/crop"]
+custom_minimum_size = Vector2(200, 30)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "apply"
+
+[node name="draw" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+metadata/_tab_index = 4
+
+[node name="brushSize" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/brushSize"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = " brush size:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="brushSizeValue" type="HSlider" parent="VBoxContainer/TabContainer/draw/brushSize"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.0
+value = 1.0
+
+[node name="hardness" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/hardness"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "hardness:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="brushSizeValue" type="HSlider" parent="VBoxContainer/TabContainer/draw/hardness"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.0
+value = 1.0
+
+[node name="color" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/color"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "color:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="brushColor" type="ColorPickerButton" parent="VBoxContainer/TabContainer/draw/color"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(1, 1, 1, 1)
+
+[node name="blendMode" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/blendMode"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "blend mode:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="brushBlend" type="TabBar" parent="VBoxContainer/TabContainer/draw/blendMode"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+tab_count = 3
+tab_0/title = "mix"
+tab_1/title = "subtract"
+tab_2/title = "mask"
+
+[node name="applyPaint" type="Button" parent="VBoxContainer/TabContainer/draw"]
+visible = false
+custom_minimum_size = Vector2(200, 30)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "apply"
+
+[connection signal="confirmed" from="FileDialog" to="." method="_on_file_selected"]
+[connection signal="confirmed" from="saveDialog" to="." method="_on_save_dialog_confirmed"]
+[connection signal="button_up" from="VBoxContainer/menuBar/newButton" to="." method="_on_new_button_button_up"]
+[connection signal="button_up" from="VBoxContainer/menuBar/LoadButton" to="." method="_openLoad"]
+[connection signal="button_up" from="VBoxContainer/menuBar/SaveButton" to="." method="_on_save_button_button_up"]
+[connection signal="button_up" from="VBoxContainer/menuBar/SaveAs" to="saveDialog" method="popup_centered_ratio" binds= [1.0]]
+[connection signal="button_up" from="VBoxContainer/menuBar/revert" to="." method="_on_revert_button_up"]
+[connection signal="button_up" from="VBoxContainer/zoom/fit" to="." method="fit"]
+[connection signal="value_changed" from="VBoxContainer/zoom/zoomSlider" to="." method="_on_zoom_value_changed"]
+[connection signal="gui_input" from="VBoxContainer/background/SubViewportContainer" to="." method="_on_canvas_gui_input"]
+[connection signal="tab_changed" from="VBoxContainer/TabContainer" to="." method="_on_tab_container_tab_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/color/brightness/brightnessSlider" to="." method="_on_brightness_slider_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/color/contrast/contrastValue" to="." method="_on_contrast_value_drag_ended"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/color/saturation/saturationValue" to="." method="_set_shader_float" binds= ["saturation"]]
+[connection signal="color_changed" from="VBoxContainer/TabContainer/color/tint/tintColor" to="." method="_on_tint_color_color_changed"]
+[connection signal="color_changed" from="VBoxContainer/TabContainer/frame/vignette/ColorPickerButton" to="." method="_on_color_picker_button_color_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/frame/vignette/HSlider" to="." method="_on_h_slider_value_changed"]
+[connection signal="button_up" from="VBoxContainer/TabContainer/resize/resize/resizeButton" to="." method="_on_resize_button_button_up"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/left/cropLeft" to="." method="_on_crop_left_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/right/cropRight" to="." method="_on_crop_right_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/top/cropTop" to="." method="_on_crop_top_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/buttom/cropButtom" to="." method="_on_crop_buttom_value_changed"]
+[connection signal="button_up" from="VBoxContainer/TabContainer/crop/applyCrop" to="." method="_on_apply_crop_button_up"]
+[connection signal="color_changed" from="VBoxContainer/TabContainer/draw/color/brushColor" to="." method="_on_brush_color_color_changed"]
+[connection signal="tab_changed" from="VBoxContainer/TabContainer/draw/blendMode/brushBlend" to="." method="_on_brush_blend_tab_changed"]
