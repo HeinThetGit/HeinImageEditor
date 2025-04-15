@@ -11,10 +11,13 @@ extends Control
 @onready var noti : Label = %noti
 @onready var canvas : TextureRect = %canvas
 @onready var brush : TextureRect = %brush
+@onready var line : Line2D = %Line2D
 
 var canvasMaterial : ShaderMaterial
 var brushMaterial : CanvasItemMaterial
 var paintLayerMaterial : CanvasItemMaterial
+var lastStroke : Vector2
+var drawing : bool
 
 var path : String
 var image: Image
@@ -28,15 +31,18 @@ var cropEnd : Vector2
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
+	
 	brush.visible = false
 	brushMaterial = %brush.material
 	paintLayerMaterial = %paintLayer.material
-	canvasMaterial = %SubViewportContainer.material
+	canvasMaterial = %canvas.material
 	var t : Texture2D = %canvas.texture
 	originalImage = t.get_image()
 	image =  originalImage.duplicate()
+	
 	update()
 	fit()
+	reset_parm()
 	pass
 
 func fit():
@@ -61,13 +67,25 @@ func fit():
 	pass
 
 func reset_parm():
-	canvasMaterial.set_shader_parameter("brightness",0)
+	#canvasMaterial.set_shader_parameter("brightness",0)
 	%brightnessSlider.value = 0
-	canvasMaterial.set_shader_parameter("contrast",0)
+	%brightnessSlider.emit_signal("value_changed")
+	#canvasMaterial.set_shader_parameter("contrast",0)
 	%contrastValue.value = 0
-	canvasMaterial.set_shader_parameter("tint_color",Color.WHITE)
-	%tintColor.color = Color.WHITE
+	%contrastValue.emit_signal("value_changed")
 	
+	%saturationValue.value = 1
+	#canvasMaterial.set_shader_parameter("tint_color",Color.WHITE)
+	%tintColor.color = Color.WHITE
+	_on_tint_color_color_changed(Color.WHITE)
+	%brushSizeValue.value = 0.5
+	%brushHardnessValue.value = 1
+	brush.modulate = Color.RED
+	%brushColor.color = Color.RED
+	%alphaMask.button_pressed = false
+	%alphaMask.emit_signal("toggled")
+	%brushBlend.current_tab = 0
+	%vignette.visible = false
 	
 	pass
 func _on_file_selected():
@@ -157,6 +175,7 @@ func _on_brightness_slider_changed(value_changed: float) -> void:
 
 func _on_revert_button_up() -> void:
 	image = originalImage.duplicate()
+	reset_parm()
 	%paintViewPort.render_target_clear_mode = 2
 	update()
 	fit()
@@ -240,6 +259,7 @@ func _set_shader_float(value: float, extra_arg_0: String) -> void:
 
 func _on_tab_container_tab_changed(tab: int) -> void:
 	currentTab = tab
+	%cropRect.visible = false
 	match tab:
 		3:
 			%cropRect.visible = true
@@ -309,15 +329,26 @@ func _on_apply_crop_button_up() -> void:
 func _on_canvas_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == 1:
-			brush.visible = !event.is_released() && currentTab == 4
+			#brush.visible = !event.is_released() && currentTab == 4
+			drawing = !event.is_released() && currentTab == 4
+		
+		if event.is_released():
+			#drawing = false
+			%Line2D.visible = false
+			%Line2D.clear_points()
 			pass
 		#print(event.button_index)
 	if event is InputEventMouse:
+		
 		#if event.is_released():
 			#brush.visible = false
 		#print("left")
 		var pos = event.position - brush.size / 2
 		brush.position = pos
+		if drawing:
+			%Line2D.visible = true
+			%Line2D.add_point(event.position)
+		
 		pass
 	#print("evenr")
 	pass # Replace with function body.
@@ -325,6 +356,7 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 
 func _on_brush_color_color_changed(color: Color) -> void:
 	brush.modulate = color
+	line.default_color = color
 	pass # Replace with function body.
 
 
@@ -342,6 +374,9 @@ func _on_new_button_button_up() -> void:
 func _on_brush_blend_tab_changed(tab: int) -> void:
 	#brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 	#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	if %alphaMask.button_pressed:
+		brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+		return
 	match tab:
 		0:
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
@@ -363,6 +398,7 @@ func _on_rotate_snap_tab_clicked(tab: int) -> void:
 
 func _on_brush_size_value_value_changed(value: float) -> void:
 	brush.scale = Vector2.ONE * value
+	line.width = value
 	pass # Replace with function body.
 
 

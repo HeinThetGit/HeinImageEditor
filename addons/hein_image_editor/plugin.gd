@@ -5,7 +5,8 @@ var editor
 func _enter_tree():
 	editor = preload("res://addons/hein_image_editor/dock.tscn").instantiate()
 	add_control_to_dock(DOCK_SLOT_RIGHT_UL, editor)
-	add_tool_menu_item("HeinImageEdit", _show)
+	#add_tool_menu_item("HeinImageEdit", _show)
+	
 	# add editor to main viewport
 	#get_editor_interface().get_editor_main_screen().add_child(editor)
 	_make_visible(false)
