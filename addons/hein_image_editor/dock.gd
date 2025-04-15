@@ -4,7 +4,7 @@ class_name dock
 extends Control
 
 @onready var file_dialog = $FileDialog
-@onready var load_button = $VBoxContainer/LoadButton
+#@onready var load_button = $VBoxContainer/LoadButton
 @onready var slider : Slider = %brightnessSlider
 @onready var save_button = %SaveButton
 @onready var view : TextureRect = %view
@@ -13,6 +13,8 @@ extends Control
 @onready var brush : TextureRect = %brush
 
 var canvasMaterial : ShaderMaterial
+var brushMaterial : CanvasItemMaterial
+var paintLayerMaterial : CanvasItemMaterial
 
 var path : String
 var image: Image
@@ -26,13 +28,35 @@ var cropEnd : Vector2
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
-	canvasMaterial = canvas.material
+	brush.visible = false
+	brushMaterial = %brush.material
+	paintLayerMaterial = %paintLayer.material
+	canvasMaterial = %SubViewportContainer.material
+	var t : Texture2D = %canvas.texture
+	originalImage = t.get_image()
+	image =  originalImage.duplicate()
+	update()
+	fit()
 	pass
 
 func fit():
-	var s = %background.size.y / image.get_size().x
-	%SubViewportContainer.scale = Vector2.ONE * s
-	%zoomSlider.value = s
+	#%SubViewportContainer.position = center
+	
+	#var newSize = min(image.get_width() / %background.size.x, image.get_height() / %background.size.y)
+	#print(image.get_size())
+	#print(%background.size)
+	var ns = %background.size.x / image.get_width()
+	#print(ns)
+	%SubViewportContainer.scale = Vector2.ONE * ns
+	#%SubViewportContainer.position = %canvas.size * ns / 2
+	#%SubViewportContainer.pivot_offset = %canvas.size * ns / 2
+	
+	#%SubViewportContainer.scale = newSize
+	#%SubViewportContainer.size *= newSize
+	#%SubViewportContainer.scale = Vector2.ONE * s
+	%zoomSlider.value = ns
+	#%SubViewportContainer.positioK-= %SubViewportContainer.size * ns / 2
+	#%SubViewportContainer.pivot_offset = %SubViewportContainer.size * ns / 2
 	
 	pass
 
@@ -51,6 +75,7 @@ func _on_file_selected():
 	path = file_dialog.current_path
 	originalImage = Image.load_from_file(path)
 	image = originalImage.duplicate()
+	update()
 	fit()
 	reset_parm()
 	#var s = %background.size.x / image.get_size().y
@@ -63,7 +88,8 @@ func update():
 	%canvas.texture = ImageTexture.create_from_image(image)
 	%canvas.size = image.get_size()
 	%viewport.size = image.get_size()
-	%info.text = str(image.get_size())
+	#%SubViewportContainer.size = image.get_size()
+	%info.text = str(image.get_size()) + " "+ path.get_extension()
 	cropStart = Vector2.ZERO
 	cropEnd = image.get_size()
 	%paintViewPort.size = image.get_size()
@@ -225,7 +251,7 @@ func _on_tab_container_tab_changed(tab: int) -> void:
 		_:
 			pass
 			%cropRect.visible = false
-			brush.visible = false
+			%brush.visible = false
 			%viewport.render_target_clear_mode = 0
 	pass # Replace with function body.
 
@@ -243,6 +269,7 @@ func _on_crop_buttom_value_changed(value: float) -> void:
 	pass # Replace with function body.
 
 func _update_crop_region():
+	%cropRect.visible = true
 	%cropRect.position = cropStart
 	%cropRect.size =  cropEnd - cropStart
 	pass
@@ -260,8 +287,13 @@ func _on_crop_left_value_changed(value: float) -> void:
 	_update_crop_region()
 	pass # Replace with function body.
 
-
+func _rotate_image(dir : int):
+	image.rotate_90(dir)
+	update()
+	fit()
+	pass
 func _on_apply_crop_button_up() -> void:
+	%cropRect.visible = false
 	var cp = %cropRect.position
 	var cs = %cropRect.size
 	var croppedImage : Image = Image.create(cs.x, cs.y, false, image.get_format() )
@@ -284,7 +316,8 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		#if event.is_released():
 			#brush.visible = false
 		#print("left")
-		brush.position = event.position
+		var pos = event.position - brush.size / 2
+		brush.position = pos
 		pass
 	#print("evenr")
 	pass # Replace with function body.
@@ -307,24 +340,46 @@ func _on_new_button_button_up() -> void:
 
 
 func _on_brush_blend_tab_changed(tab: int) -> void:
-	var m = brush.material
-	var pm = %paintLayer.material
-	if m is CanvasItemMaterial:
-		match tab:
-			0:
-				pass
-				m.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	#brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	match tab:
+		0:
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			
-			2:
-				pass
-				if pm is CanvasItemMaterial:
-					pm.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-			1:
-				pass
-				m.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-			_:
-				pass
-				if pm is CanvasItemMaterial:
-					pm.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-		pass
+		1:
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+		2:
+			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+		
+	pass # Replace with function b
+	
+
+
+func _on_rotate_snap_tab_clicked(tab: int) -> void:
+	_rotate_image(tab)
+	pass # Replace with function body.
+
+
+func _on_brush_size_value_value_changed(value: float) -> void:
+	brush.scale = Vector2.ONE * value
+	pass # Replace with function body.
+
+
+func _on_flip_image_tab_clicked(tab: int) -> void:
+	if tab == 0:
+		image.flip_x()
+	else:
+		image.flip_y()
+	
+	update()
+	fit()
+	pass # Replace with function body.
+
+
+func _on_alpha_mask_toggled(toggled_on: bool) -> void:
+	if toggled_on:
+		paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+	else:
+		paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 	pass # Replace with function body.

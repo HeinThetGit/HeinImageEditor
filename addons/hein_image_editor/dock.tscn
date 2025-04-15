@@ -1,31 +1,39 @@
-[gd_scene load_steps=12 format=3 uid="uid://40xa4aqbciby"]
+[gd_scene load_steps=15 format=3 uid="uid://40xa4aqbciby"]
 
-[ext_resource type="Script" uid="uid://cesn513em6x4l" path="res://addons/image_editor/dock.gd" id="1_mup7s"]
-[ext_resource type="Texture2D" uid="uid://bgcjbs81r16vl" path="res://icon.svg" id="2_g6rxj"]
-[ext_resource type="Shader" uid="uid://c6juifocpjdrh" path="res://brightnessr.gdshader" id="3_s85rn"]
-[ext_resource type="Texture2D" uid="uid://buv53ooy0ctid" path="res://islands1.jpg" id="4_lomty"]
-[ext_resource type="Shader" uid="uid://d3widaxnx6mhv" path="res://addons/image_editor/Vignette.gdshader" id="4_qkhg3"]
+[ext_resource type="Script" uid="uid://cesn513em6x4l" path="res://addons/hein_image_editor/dock.gd" id="1_mup7s"]
+[ext_resource type="Texture2D" uid="uid://c1ot2hemq2jar" path="res://icon.svg" id="2_g6rxj"]
+[ext_resource type="Shader" uid="uid://bvpr7l2akqljw" path="res://addons/hein_image_editor/ImageBG.gdshader" id="2_wpmg0"]
+[ext_resource type="Texture2D" uid="uid://diyq8grssrpah" path="res://addons/hein_image_editor/checkerBoard.jpg" id="3_8cum3"]
+[ext_resource type="Shader" uid="uid://cjujenyn7e8va" path="res://addons/hein_image_editor/brightnessr.gdshader" id="3_s85rn"]
+[ext_resource type="Shader" uid="uid://d3widaxnx6mhv" path="res://addons/hein_image_editor/Vignette.gdshader" id="4_qkhg3"]
+[ext_resource type="Texture2D" uid="uid://db7s7a807swku" path="res://addons/hein_image_editor/islands1.jpg" id="6_8cum3"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8cum3"]
+shader = ExtResource("2_wpmg0")
+shader_parameter/my_texture = ExtResource("3_8cum3")
+shader_parameter/tint_color = Color(0.260489, 0.260489, 0.260489, 1)
+shader_parameter/uv_scale = Vector2(1.923, 1.39)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfuco"]
+shader = ExtResource("3_s85rn")
+shader_parameter/brightness = 0.0
+shader_parameter/contrast = 0.0
+shader_parameter/saturation = 3.0
+shader_parameter/tint_color = Color(1, 1, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qkhg3"]
 bg_color = Color(1, 0, 0.0166664, 0.192157)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_qkhg3"]
-shader = ExtResource("3_s85rn")
-shader_parameter/brightness = 0.0
-shader_parameter/contrast = 0.826772
-shader_parameter/saturation = 3.77451
-shader_parameter/tint_color = Color(1, 1, 1, 1)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qaxmh"]
+shader = ExtResource("4_qkhg3")
+shader_parameter/softness_x = 0.12037
+shader_parameter/softness_y = 0.12037
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_lomty"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_qkhg3"]
 
-[sub_resource type="CanvasTexture" id="CanvasTexture_qkhg3"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_qaxmh"]
-shader = ExtResource("4_qkhg3")
-shader_parameter/softness_x = 0.124309
-shader_parameter/softness_y = 0.124309
+[sub_resource type="CanvasTexture" id="CanvasTexture_8cum3"]
 
 [node name="ImageEditor" type="Control"]
 layout_mode = 3
@@ -56,15 +64,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 1.0
-offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 5
 
 [node name="menuBar" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 2
 alignment = 1
 
 [node name="newButton" type="Button" parent="VBoxContainer/menuBar"]
@@ -110,7 +116,7 @@ alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "zoom"
+text = "(1024, 718) "
 horizontal_alignment = 2
 vertical_alignment = 1
 
@@ -124,18 +130,21 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.05
-max_value = 5.0
+min_value = 0.2
+max_value = 3.0
 step = 0.0
 value = 1.2
 
-[node name="background" type="ColorRect" parent="VBoxContainer"]
+[node name="background" type="TextureRect" parent="VBoxContainer"]
 unique_name_in_owner = true
 clip_children = 2
-custom_minimum_size = Vector2(0, 300)
+material = SubResource("ShaderMaterial_8cum3")
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 mouse_filter = 2
-color = Color(0.0886252, 0.0886252, 0.0886252, 1)
+texture = ExtResource("3_8cum3")
+expand_mode = 1
+stretch_mode = 1
 
 [node name="view" type="TextureRect" parent="VBoxContainer/background"]
 unique_name_in_owner = true
@@ -163,10 +172,11 @@ stretch_mode = 4
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="VBoxContainer/background"]
 unique_name_in_owner = true
+material = SubResource("ShaderMaterial_wfuco")
 layout_mode = 1
-offset_right = 2048.0
-offset_bottom = 2048.0
-metadata/_edit_lock_ = true
+offset_right = 1024.0
+offset_bottom = 718.0
+scale = Vector2(0.41, 0.41)
 
 [node name="cropRect" type="Panel" parent="VBoxContainer/background/SubViewportContainer"]
 unique_name_in_owner = true
@@ -178,51 +188,20 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_qkhg3")
 unique_name_in_owner = true
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(2048, 2048)
+gui_disable_input = true
+size = Vector2i(1024, 718)
 render_target_clear_mode = 1
 render_target_update_mode = 4
 
 [node name="canvas" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport"]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_qkhg3")
-offset_right = 128.0
-offset_bottom = 128.0
+offset_right = 1024.0
+offset_bottom = 718.0
 size_flags_horizontal = 6
 size_flags_vertical = 6
 mouse_filter = 2
-texture = ExtResource("4_lomty")
+texture = ExtResource("6_8cum3")
 expand_mode = 1
-metadata/_edit_lock_ = true
-
-[node name="paintLayer" type="SubViewportContainer" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas"]
-unique_name_in_owner = true
-material = SubResource("CanvasItemMaterial_lomty")
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="paintViewPort" type="SubViewport" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas/paintLayer"]
-unique_name_in_owner = true
-transparent_bg = true
-handle_input_locally = false
-gui_disable_input = true
-size = Vector2i(128, 128)
-render_target_clear_mode = 1
-render_target_update_mode = 4
-
-[node name="brush" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas/paintLayer/paintViewPort"]
-unique_name_in_owner = true
-material = SubResource("CanvasItemMaterial_qkhg3")
-offset_left = 76.0
-offset_top = 45.0
-offset_right = 143.0
-offset_bottom = 126.0
-texture = SubResource("CanvasTexture_qkhg3")
 
 [node name="vignette" type="ColorRect" parent="VBoxContainer/background/SubViewportContainer/viewport/canvas"]
 unique_name_in_owner = true
@@ -236,9 +215,33 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.99, 0.99, 0.99, 1)
 
+[node name="paintLayer" type="SubViewportContainer" parent="VBoxContainer/background/SubViewportContainer/viewport"]
+unique_name_in_owner = true
+material = SubResource("CanvasItemMaterial_lomty")
+offset_right = 1024.0
+offset_bottom = 718.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="paintViewPort" type="SubViewport" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer"]
+unique_name_in_owner = true
+transparent_bg = true
+handle_input_locally = false
+gui_disable_input = true
+size = Vector2i(1024, 718)
+render_target_clear_mode = 1
+render_target_update_mode = 4
+
+[node name="brush" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
+unique_name_in_owner = true
+visible = false
+material = SubResource("CanvasItemMaterial_qkhg3")
+offset_right = 67.0
+offset_bottom = 81.0
+texture = SubResource("CanvasTexture_8cum3")
+
 [node name="TabContainer" type="TabContainer" parent="VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 3
 current_tab = 4
 
 [node name="color" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
@@ -252,7 +255,6 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/brightness"]
-custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "brightness"
@@ -264,9 +266,9 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
-max_value = 5.0
+min_value = -1.0
+max_value = 2.0
 step = 0.0
-value = 1.0
 
 [node name="contrast" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
 layout_mode = 2
@@ -274,7 +276,6 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/contrast"]
-custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "contrast"
@@ -286,9 +287,9 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
-max_value = 5.0
+min_value = -1.0
+max_value = 2.0
 step = 0.0
-value = 1.0
 
 [node name="saturation" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
 layout_mode = 2
@@ -296,7 +297,6 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/saturation"]
-custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "saturation"
@@ -307,7 +307,7 @@ vertical_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
-max_value = 5.0
+max_value = 3.0
 step = 0.0
 value = 1.0
 
@@ -317,7 +317,6 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/tint"]
-custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Tint"
@@ -337,11 +336,9 @@ metadata/_tab_index = 1
 
 [node name="vignette" type="HBoxContainer" parent="VBoxContainer/TabContainer/frame"]
 layout_mode = 2
-alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/TabContainer/frame/vignette"]
 layout_mode = 2
-size_flags_horizontal = 3
 text = "vignette"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -353,41 +350,81 @@ alignment = 0
 color = Color(1, 1, 1, 1)
 
 [node name="HSlider" type="HSlider" parent="VBoxContainer/TabContainer/frame/vignette"]
-custom_minimum_size = Vector2(200, 30)
+custom_minimum_size = Vector2(100, 0.34)
 layout_mode = 2
 max_value = 0.5
 step = 0.0
 
-[node name="resize" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+[node name="transform" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="resize" type="HBoxContainer" parent="VBoxContainer/TabContainer/resize"]
+[node name="resize" type="HBoxContainer" parent="VBoxContainer/TabContainer/transform"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/resize/resize"]
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/transform/resize"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "resize"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="width" type="LineEdit" parent="VBoxContainer/TabContainer/resize/resize"]
+[node name="width" type="LineEdit" parent="VBoxContainer/TabContainer/transform/resize"]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "width"
 
-[node name="height" type="LineEdit" parent="VBoxContainer/TabContainer/resize/resize"]
+[node name="height" type="LineEdit" parent="VBoxContainer/TabContainer/transform/resize"]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "height"
 
-[node name="resizeButton" type="Button" parent="VBoxContainer/TabContainer/resize/resize"]
+[node name="resizeButton" type="Button" parent="VBoxContainer/TabContainer/transform/resize"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "ok"
+
+[node name="flip" type="HBoxContainer" parent="VBoxContainer/TabContainer/transform"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/transform/flip"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "flip"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="flipImage" type="TabBar" parent="VBoxContainer/TabContainer/transform/flip"]
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+tab_count = 2
+tab_0/title = "x"
+tab_1/title = "y"
+
+[node name="rotate" type="HBoxContainer" parent="VBoxContainer/TabContainer/transform"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/TabContainer/transform/rotate"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "rotate"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="rotateSnap" type="TabBar" parent="VBoxContainer/TabContainer/transform/rotate"]
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+tab_count = 2
+tab_0/title = "left"
+tab_1/title = "right"
 
 [node name="crop" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
 visible = false
@@ -533,16 +570,15 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
-color = Color(1, 1, 1, 1)
+color = Color(1, 0, 0, 1)
 
 [node name="blendMode" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
 layout_mode = 2
-alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/blendMode"]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "blend mode:"
+size_flags_horizontal = 0
+text = "blend:"
 horizontal_alignment = 2
 vertical_alignment = 1
 
@@ -551,10 +587,18 @@ custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 current_tab = 0
-tab_count = 3
+tab_count = 2
 tab_0/title = "mix"
 tab_1/title = "subtract"
-tab_2/title = "mask"
+
+[node name="alphaMasking" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
+layout_mode = 2
+
+[node name="alphaMask" type="CheckBox" parent="VBoxContainer/TabContainer/draw/alphaMasking"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "paint layer as alpha mask"
 
 [node name="applyPaint" type="Button" parent="VBoxContainer/TabContainer/draw"]
 visible = false
@@ -580,11 +624,16 @@ text = "apply"
 [connection signal="color_changed" from="VBoxContainer/TabContainer/color/tint/tintColor" to="." method="_on_tint_color_color_changed"]
 [connection signal="color_changed" from="VBoxContainer/TabContainer/frame/vignette/ColorPickerButton" to="." method="_on_color_picker_button_color_changed"]
 [connection signal="value_changed" from="VBoxContainer/TabContainer/frame/vignette/HSlider" to="." method="_on_h_slider_value_changed"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/resize/resize/resizeButton" to="." method="_on_resize_button_button_up"]
+[connection signal="button_up" from="VBoxContainer/TabContainer/transform/resize/resizeButton" to="." method="_on_resize_button_button_up"]
+[connection signal="tab_clicked" from="VBoxContainer/TabContainer/transform/flip/flipImage" to="." method="_on_flip_image_tab_clicked"]
+[connection signal="tab_clicked" from="VBoxContainer/TabContainer/transform/rotate/rotateSnap" to="." method="_on_rotate_snap_tab_clicked"]
 [connection signal="value_changed" from="VBoxContainer/TabContainer/crop/left/cropLeft" to="." method="_on_crop_left_value_changed"]
 [connection signal="value_changed" from="VBoxContainer/TabContainer/crop/right/cropRight" to="." method="_on_crop_right_value_changed"]
 [connection signal="value_changed" from="VBoxContainer/TabContainer/crop/top/cropTop" to="." method="_on_crop_top_value_changed"]
 [connection signal="value_changed" from="VBoxContainer/TabContainer/crop/buttom/cropButtom" to="." method="_on_crop_buttom_value_changed"]
 [connection signal="button_up" from="VBoxContainer/TabContainer/crop/applyCrop" to="." method="_on_apply_crop_button_up"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/draw/brushSize/brushSizeValue" to="." method="_on_brush_size_value_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/TabContainer/draw/hardness/brushSizeValue" to="." method="_on_brush_size_value_value_changed"]
 [connection signal="color_changed" from="VBoxContainer/TabContainer/draw/color/brushColor" to="." method="_on_brush_color_color_changed"]
 [connection signal="tab_changed" from="VBoxContainer/TabContainer/draw/blendMode/brushBlend" to="." method="_on_brush_blend_tab_changed"]
+[connection signal="toggled" from="VBoxContainer/TabContainer/draw/alphaMasking/alphaMask" to="." method="_on_alpha_mask_toggled"]

@@ -16,7 +16,7 @@ config/icon="res://icon.svg"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/image_editor/plugin.cfg")
+enabled=PackedStringArray("res://addons/hein_image_editor/plugin.cfg")
 
 [rendering]
 
