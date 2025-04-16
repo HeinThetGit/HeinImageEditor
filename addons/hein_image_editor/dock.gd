@@ -10,11 +10,13 @@ extends Control
 @onready var view : TextureRect = %view
 @onready var noti : Label = %noti
 @onready var canvas : TextureRect = %canvas
+@onready var paintRender : SubViewport = %paintViewPort
 @onready var brush : TextureRect = %brush
 @onready var line : Line2D = %Line2D
 
 var canvasMaterial : ShaderMaterial
 var brushMaterial : CanvasItemMaterial
+var lineMaterial : CanvasItemMaterial
 var paintLayerMaterial : CanvasItemMaterial
 var lastStroke : Vector2
 var drawing : bool
@@ -28,12 +30,15 @@ var currentTab : int
 var cropStart : Vector2
 var cropEnd : Vector2
 
+var mousePos : Vector2
+
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
 	
 	brush.visible = false
 	brushMaterial = %brush.material
+	lineMaterial = line.material
 	paintLayerMaterial = %paintLayer.material
 	canvasMaterial = %canvas.material
 	var t : Texture2D = %canvas.texture
@@ -46,23 +51,12 @@ func _ready():
 	pass
 
 func fit():
-	#%SubViewportContainer.position = center
-	
-	#var newSize = min(image.get_width() / %background.size.x, image.get_height() / %background.size.y)
-	#print(image.get_size())
-	#print(%background.size)
-	var ns = %background.size.x / image.get_width()
-	#print(ns)
-	%SubViewportContainer.scale = Vector2.ONE * ns
-	#%SubViewportContainer.position = %canvas.size * ns / 2
-	#%SubViewportContainer.pivot_offset = %canvas.size * ns / 2
-	
-	#%SubViewportContainer.scale = newSize
-	#%SubViewportContainer.size *= newSize
-	#%SubViewportContainer.scale = Vector2.ONE * s
-	%zoomSlider.value = ns
-	#%SubViewportContainer.positioK-= %SubViewportContainer.size * ns / 2
-	#%SubViewportContainer.pivot_offset = %SubViewportContainer.size * ns / 2
+	%SubViewportContainer.pivot_offset = Vector2.ZERO
+	var fitWidth = %background.size.x / image.get_width()
+	var fitHeight = %background.size.y / image.get_height()
+	var minimunFit = min(fitWidth, fitHeight)
+	%SubViewportContainer.scale = Vector2.ONE * minimunFit
+	%zoomSlider.value = minimunFit
 	
 	pass
 
@@ -78,13 +72,11 @@ func reset_parm():
 	#canvasMaterial.set_shader_parameter("tint_color",Color.WHITE)
 	%tintColor.color = Color.WHITE
 	_on_tint_color_color_changed(Color.WHITE)
-	%brushSizeValue.value = 0.5
-	%brushHardnessValue.value = 1
+	%brushSizeValue.value = 10
 	brush.modulate = Color.RED
 	%brushColor.color = Color.RED
-	%alphaMask.button_pressed = false
-	%alphaMask.emit_signal("toggled")
-	%brushBlend.current_tab = 0
+	%brushBlend.selected = 0
+	_on_brush_blend_tab_changed(0)
 	%vignette.visible = false
 	
 	pass
@@ -110,7 +102,7 @@ func update():
 	%info.text = str(image.get_size()) + " "+ path.get_extension()
 	cropStart = Vector2.ZERO
 	cropEnd = image.get_size()
-	%paintViewPort.size = image.get_size()
+	paintRender.size = image.get_size()
 	#noti.text = "updating..."
 	#await get_tree().create_timer(0.1).timeout
 	#noti.text = ""
@@ -176,15 +168,17 @@ func _on_brightness_slider_changed(value_changed: float) -> void:
 func _on_revert_button_up() -> void:
 	image = originalImage.duplicate()
 	reset_parm()
-	%paintViewPort.render_target_clear_mode = 2
+	_clear_paint()
 	update()
 	fit()
 	pass # Replace with function body.
 
-
+		
 func _on_zoom_value_changed(value: float) -> void:
 	zoom = value
+	#%SubViewportContainer.pivot_offset = mousePos
 	%SubViewportContainer.scale = Vector2.ONE * value
+	#%SubViewportContainer.size = Vector2(image.get_size())  * value
 	#view.custom_minimum_size = Vector2.ONE * scale*100
 	#view.scale = Vector2.ONE * zoom
 	pass # Replace with function body.
@@ -260,18 +254,14 @@ func _set_shader_float(value: float, extra_arg_0: String) -> void:
 func _on_tab_container_tab_changed(tab: int) -> void:
 	currentTab = tab
 	%cropRect.visible = false
+	%brush.visible = false
+	%viewport.render_target_clear_mode = 1
 	match tab:
 		3:
 			%cropRect.visible = true
 			pass
 		4:
 			pass
-			%viewport.render_target_clear_mode = 1
-			#print("cl")
-		_:
-			pass
-			%cropRect.visible = false
-			%brush.visible = false
 			%viewport.render_target_clear_mode = 0
 	pass # Replace with function body.
 
@@ -316,10 +306,12 @@ func _on_apply_crop_button_up() -> void:
 	%cropRect.visible = false
 	var cp = %cropRect.position
 	var cs = %cropRect.size
-	var croppedImage : Image = Image.create(cs.x, cs.y, false, image.get_format() )
-	croppedImage.blit_rect(image, Rect2(cp.x, cp.y, cs.x, cs.y), Vector2(0,0) )
+	var captured : Image = %viewport.get_texture().get_image()
+	var croppedImage : Image = Image.create(cs.x, cs.y, false, captured.get_format() )
+	croppedImage.blit_rect(captured, Rect2(cp.x, cp.y, cs.x, cs.y), Vector2(0,0) )
 	
 	image = croppedImage
+	reset_parm()
 	update()
 	fit()
 	
@@ -346,8 +338,15 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		var pos = event.position - brush.size / 2
 		brush.position = pos
 		if drawing:
-			%Line2D.visible = true
-			%Line2D.add_point(event.position)
+			#Obviously, line render wont display a line if the two point are identical
+			#But we need to display a dot at mouse position if the pointer doesnt move
+			# thus adding an offset to the second mouse postion
+			line.visible = true
+			if line.get_point_count() == 0:
+				line.add_point(event.position)
+				line.add_point(event.position + Vector2(0.001,0))
+			else:
+				line.add_point(event.position)
 		
 		pass
 	#print("evenr")
@@ -360,11 +359,11 @@ func _on_brush_color_color_changed(color: Color) -> void:
 	pass # Replace with function body.
 
 
-func _on_new_button_button_up() -> void:
+func _create_new_image(width : int, height : int, color : Color) -> void:
 	#_on_revert_button_up()
 	%paintViewPort.render_target_clear_mode = 2
-	var originalImage : Image = Image.create(512, 512, false, Image.FORMAT_RGBA8)
-	originalImage.fill(Color.WHITE)
+	originalImage = Image.create(width, height, false, Image.FORMAT_RGBA8)
+	originalImage.fill(color)
 	image = originalImage.duplicate()
 	update()
 	fit()
@@ -374,18 +373,20 @@ func _on_new_button_button_up() -> void:
 func _on_brush_blend_tab_changed(tab: int) -> void:
 	#brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 	#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-	if %alphaMask.button_pressed:
-		brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-		return
 	match tab:
 		0:
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			
 		1:
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 		2:
-			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 		
 	pass # Replace with function b
 	
@@ -399,6 +400,7 @@ func _on_rotate_snap_tab_clicked(tab: int) -> void:
 func _on_brush_size_value_value_changed(value: float) -> void:
 	brush.scale = Vector2.ONE * value
 	line.width = value
+	%brushSizeText.text = str(value)
 	pass # Replace with function body.
 
 
@@ -413,9 +415,17 @@ func _on_flip_image_tab_clicked(tab: int) -> void:
 	pass # Replace with function body.
 
 
-func _on_alpha_mask_toggled(toggled_on: bool) -> void:
-	if toggled_on:
-		paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-	else:
-		paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+func _clear_paint():
+	paintRender.render_target_clear_mode = 2
+	pass
+
+
+func _on_create_dialog_confirmed() -> void:
+	_create_new_image(%initWidth.text.to_int(), %initHeight.text.to_int(), %initColor.color)
+	pass # Replace with function body.
+
+
+func _on_brush_size_text_text_submitted(new_text: String) -> void:
+	#_on_brush_size_value_value_changed(new_text.to_int())
+	%brushSizeValue.value = new_text.to_int()
 	pass # Replace with function body.
