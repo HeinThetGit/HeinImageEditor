@@ -4,6 +4,7 @@ class_name dock
 extends Control
 
 @onready var file_dialog = $FileDialog
+var cancled : bool
 #@onready var load_button = $VBoxContainer/LoadButton
 @onready var slider : Slider = %brightnessSlider
 @onready var save_button = %SaveButton
@@ -12,6 +13,10 @@ extends Control
 @onready var canvas : TextureRect = %canvas
 @onready var paintRender : SubViewport = %paintViewPort
 @onready var brush : TextureRect = %brush
+@onready var nb : Line2D = %north
+@onready var sb : Line2D = %south
+@onready var eb : Line2D = %east
+@onready var wb : Line2D = %west
 @onready var line : Line2D = %Line2D
 
 var canvasMaterial : ShaderMaterial
@@ -20,6 +25,7 @@ var lineMaterial : CanvasItemMaterial
 var paintLayerMaterial : CanvasItemMaterial
 var lastStroke : Vector2
 var drawing : bool
+var seamlessMode : bool
 
 var path : String
 var image: Image
@@ -30,7 +36,9 @@ var currentTab : int
 var cropStart : Vector2
 var cropEnd : Vector2
 
-var mousePos : Vector2
+@onready var frames : Control = %frames
+@onready var frameOptions : OptionButton = %frameOptions
+var currentFrame : Control
 
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
@@ -51,24 +59,25 @@ func _ready():
 	pass
 
 func fit():
-	%SubViewportContainer.pivot_offset = Vector2.ZERO
+	
+	
 	var fitWidth = %background.size.x / image.get_width()
 	var fitHeight = %background.size.y / image.get_height()
 	var minimunFit = min(fitWidth, fitHeight)
 	%SubViewportContainer.scale = Vector2.ONE * minimunFit
 	%zoomSlider.value = minimunFit
-	
-	pass
 
+	
 func reset_parm():
 	#canvasMaterial.set_shader_parameter("brightness",0)
 	%brightnessSlider.value = 0
-	%brightnessSlider.emit_signal("value_changed")
+	_on_brightness_slider_changed(0)
 	#canvasMaterial.set_shader_parameter("contrast",0)
 	%contrastValue.value = 0
-	%contrastValue.emit_signal("value_changed")
+	_on_contrast_value_drag_ended(0)
 	
 	%saturationValue.value = 1
+	_set_shader_float(1,'saturation')
 	#canvasMaterial.set_shader_parameter("tint_color",Color.WHITE)
 	%tintColor.color = Color.WHITE
 	_on_tint_color_color_changed(Color.WHITE)
@@ -77,11 +86,15 @@ func reset_parm():
 	%brushColor.color = Color.RED
 	%brushBlend.selected = 0
 	_on_brush_blend_tab_changed(0)
-	%vignette.visible = false
+	
+	%frameSlider.value = 0
+	%frameColor.color = Color.WHITE
+	_frame_color_changed(Color.WHITE)
+	%frameOptions.select(0)
 	
 	pass
 func _on_file_selected():
-	print("ss")
+	toast(file_dialog.current_path)
 	path = file_dialog.current_path
 	originalImage = Image.load_from_file(path)
 	image = originalImage.duplicate()
@@ -103,6 +116,8 @@ func update():
 	cropStart = Vector2.ZERO
 	cropEnd = image.get_size()
 	paintRender.size = image.get_size()
+	_set_neighbor_brush_dist()
+	
 	#noti.text = "updating..."
 	#await get_tree().create_timer(0.1).timeout
 	#noti.text = ""
@@ -125,8 +140,8 @@ func _apply_brightness(brightness: float):
 
 func toast(msg : String):
 	noti.text = msg
-	await get_tree().create_timer(1.5).timeout
-	%noti.text = ""
+	#await get_tree().create_timer(3).timeout
+	#%noti.text = ""
 	pass
 func save(savePath : String):
 	noti.text = "Saving..."
@@ -142,27 +157,15 @@ func save(savePath : String):
 		print("saved as jpg")
 		#%viewport.
 	if e == "png" :
+		
 		captured.save_png(savePath)
-		print("saved as png")
-	toast("Saved!")
-	if savePath != path:
-		#ResourceLoader.load(savePath, "", ResourceLoader.CACHE_MODE_REPLACE)
-		#EditorResourcePreview.queue_edited_resource_reload("res://my_folder/my_image.jpg")
-		EditorInterface.get_resource_filesystem().scan()
-	
-	#EditorInterface.inspect_object(ResourceLoader.load(path))
-	#EditorInterface.get_singleton().inspect_object(ResourceLoader.load(sa
+		print("file saved!")
+		print(savePath)
+	toast(e +" Saved! "+ savePath)
+	EditorInterface.get_resource_filesystem().scan_sources()
 
 func _on_brightness_slider_changed(value_changed: float) -> void:
-	#print("mmmm")
 	canvasMaterial.set_shader_parameter('brightness',value_changed)
-	#noti.text = "updating..."
-	#await get_tree().create_timer(0.05).timeout
-	#if image:
-		#_apply_brightness(slider.value)
-		#update()
-	pass # Replace with function body.
-	#noti.text = ""
 
 
 func _on_revert_button_up() -> void:
@@ -176,7 +179,7 @@ func _on_revert_button_up() -> void:
 		
 func _on_zoom_value_changed(value: float) -> void:
 	zoom = value
-	#%SubViewportContainer.pivot_offset = mousePos
+	#%SubViewportContainer.pivot_offset =
 	%SubViewportContainer.scale = Vector2.ONE * value
 	#%SubViewportContainer.size = Vector2(image.get_size())  * value
 	#view.custom_minimum_size = Vector2.ONE * scale*100
@@ -198,8 +201,16 @@ func _on_contrast_value_drag_ended(value_changed: float) -> void:
 
 
 
-func _on_save_dialog_confirmed() -> void:
-	save(%saveDialog.current_path)
+func _on_save_dialog_visibility_changed() -> void:
+	if %saveDialog.visible:
+		cancled = false
+	else:
+		if !cancled:
+			save(%saveDialog.current_path)
+	
+
+		
+	#save(%saveDialog.current_path)
 	pass # Replace with function body.
 
 
@@ -225,22 +236,29 @@ func _on_resize_button_button_up() -> void:
 	pass # Replace with function body.
 
 
-func _on_h_slider_value_changed(value: float) -> void:
-	var on :bool = value > 0.01
-	%vignette.visible = on
-		
-	var mt = %vignette.material
-	if mt is ShaderMaterial:
-		mt.set_shader_parameter("softness_y",value)
-		var ratio = canvas.size.y / canvas.size.x
-		mt.set_shader_parameter("softness_x",value * ratio)
+func _frame_slider_changed(value: float) -> void:
+	
+	if currentFrame:
+		var mt = currentFrame.material
+		if mt is ShaderMaterial:
+			match frameOptions.selected:
+				1:
+					mt.set_shader_parameter("softness_y",value)
+					var ratio = canvas.size.y / canvas.size.x
+					mt.set_shader_parameter("softness_x",value * ratio)
+				2:
+					pass
 		
 		
 	pass # Replace with function body.
 
 
-func _on_color_picker_button_color_changed(color: Color) -> void:
-	%vignette.color = color
+func _frame_color_changed(color: Color) -> void:
+	if currentFrame:
+		currentFrame.modulate = color
+		match frameOptions.selected:
+			1:
+				pass
 	pass # Replace with function body.
 
 
@@ -255,13 +273,11 @@ func _on_tab_container_tab_changed(tab: int) -> void:
 	currentTab = tab
 	%cropRect.visible = false
 	%brush.visible = false
-	%viewport.render_target_clear_mode = 1
+	#%viewport.render_target_clear_mode = 1
 	match tab:
 		3:
 			%cropRect.visible = true
-			pass
 		4:
-			pass
 			%viewport.render_target_clear_mode = 0
 	pass # Replace with function body.
 
@@ -298,6 +314,7 @@ func _on_crop_left_value_changed(value: float) -> void:
 	pass # Replace with function body.
 
 func _rotate_image(dir : int):
+	apply_effect()
 	image.rotate_90(dir)
 	update()
 	fit()
@@ -326,8 +343,12 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		
 		if event.is_released():
 			#drawing = false
-			%Line2D.visible = false
-			%Line2D.clear_points()
+			line.visible = false
+			line.clear_points()
+			nb.clear_points()
+			sb.clear_points()
+			eb.clear_points()
+			wb.clear_points()
 			pass
 		#print(event.button_index)
 	if event is InputEventMouse:
@@ -340,22 +361,44 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		if drawing:
 			#Obviously, line render wont display a line if the two point are identical
 			#But we need to display a dot at mouse position if the pointer doesnt move
-			# thus adding an offset to the second mouse postion
+			# thus adding an offset to the second point
 			line.visible = true
 			if line.get_point_count() == 0:
+				var offset = event.position + Vector2(0.001,0)
 				line.add_point(event.position)
-				line.add_point(event.position + Vector2(0.001,0))
+				line.add_point(offset)
+				
+				if seamlessMode:
+					_add_neighor_brush_point(offset)
+					_add_neighor_brush_point(event.position)
 			else:
 				line.add_point(event.position)
+				if seamlessMode:
+					_add_neighor_brush_point(event.position)
 		
 		pass
 	#print("evenr")
 	pass # Replace with function body.
 
+func _add_neighor_brush_point(pos : Vector2):
+	nb.add_point(pos)
+	sb.add_point(pos)
+	eb.add_point(pos)
+	wb.add_point(pos)
 
+func _set_neighbor_brush_dist():
+	nb.position.y = -%canvas.size.y
+	sb.position.y = %canvas.size.y
+	eb.position.x = %canvas.size.x
+	wb.position.x = -%canvas.size.x
+	
 func _on_brush_color_color_changed(color: Color) -> void:
 	brush.modulate = color
 	line.default_color = color
+	sb.default_color = color
+	nb.default_color = color
+	eb.default_color = color
+	wb.default_color = color
 	pass # Replace with function body.
 
 
@@ -387,6 +430,10 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+		3:
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 		
 	pass # Replace with function b
 	
@@ -401,10 +448,15 @@ func _on_brush_size_value_value_changed(value: float) -> void:
 	brush.scale = Vector2.ONE * value
 	line.width = value
 	%brushSizeText.text = str(value)
+	nb.width = value
+	sb.width = value
+	eb.width = value
+	wb.width = value
 	pass # Replace with function body.
 
 
 func _on_flip_image_tab_clicked(tab: int) -> void:
+	apply_effect()
 	if tab == 0:
 		image.flip_x()
 	else:
@@ -414,7 +466,11 @@ func _on_flip_image_tab_clicked(tab: int) -> void:
 	fit()
 	pass # Replace with function body.
 
-
+func apply_effect():
+	image = %viewport.get_texture().get_image()
+	_clear_paint()
+	reset_parm()
+	
 func _clear_paint():
 	paintRender.render_target_clear_mode = 2
 	pass
@@ -428,4 +484,38 @@ func _on_create_dialog_confirmed() -> void:
 func _on_brush_size_text_text_submitted(new_text: String) -> void:
 	#_on_brush_size_value_value_changed(new_text.to_int())
 	%brushSizeValue.value = new_text.to_int()
+	pass # Replace with function body.
+
+
+func _on_frame_option_item_selected(index: int) -> void:
+	
+	
+	if currentFrame:
+		currentFrame.visible = false
+		currentFrame = null
+	if index > 0:
+		currentFrame = frames.get_child(index - 1)
+		currentFrame.visible = true
+		var mat = currentFrame.material 
+		if mat is ShaderMaterial:
+			mat.set_shader_parameter('rect_size',canvas.size)
+	match index:
+		0:
+			pass
+		1:
+			pass
+			
+	pass # Replace with function body.
+
+
+func _on_seamless_mode_toggled(toggled_on: bool) -> void:
+	_set_neighbor_brush_dist()
+	print(nb.position)
+	seamlessMode = toggled_on
+	pass # Replace with function body.
+
+
+func _on_save_dialog_canceled() -> void:
+	print('cancled')
+	cancled = true
 	pass # Replace with function body.
