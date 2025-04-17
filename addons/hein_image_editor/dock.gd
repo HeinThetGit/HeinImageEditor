@@ -10,6 +10,8 @@ var cancled : bool
 @onready var save_button = %SaveButton
 @onready var view : TextureRect = %view
 @onready var noti : Label = %noti
+@onready var background : Control = %background
+@onready var imageView : SubViewportContainer = %SubViewportContainer
 @onready var canvas : TextureRect = %canvas
 @onready var paintRender : SubViewport = %paintViewPort
 @onready var brush : TextureRect = %brush
@@ -60,12 +62,21 @@ func _ready():
 
 func fit():
 	
-	
-	var fitWidth = %background.size.x / image.get_width()
-	var fitHeight = %background.size.y / image.get_height()
+	var fitWidth = background.size.x / image.get_width()
+	var fitHeight = background.size.y / image.get_height()
 	var minimunFit = min(fitWidth, fitHeight)
-	%SubViewportContainer.scale = Vector2.ONE * minimunFit
+	imageView.scale = Vector2.ONE * minimunFit
 	%zoomSlider.value = minimunFit
+	
+	_center_view()
+	#imageView.position = background.size / 2
+	#imageView.position -= (Vector2(image.get_size() ) / 2) * imageView.scale
+
+func _center_view():
+	if !background:
+		return
+	imageView.position = background.size / 2
+	imageView.position -= (Vector2(image.get_size() ) / 2) * imageView.scale
 
 	
 func reset_parm():
@@ -113,11 +124,17 @@ func update():
 	%viewport.size = image.get_size()
 	#%SubViewportContainer.size = image.get_size()
 	%info.text = str(image.get_size()) + " "+ path.get_extension()
+	
 	cropStart = Vector2.ZERO
 	cropEnd = image.get_size()
 	paintRender.size = image.get_size()
 	_set_neighbor_brush_dist()
+	%viewOutline.custom_minimum_size = Vector2(image.get_size())
 	
+	%viewOutline.size = %canvas.size * zoom
+	var m = %viewOutline.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter('rect_size',%viewOutline.size * zoom)
 	#noti.text = "updating..."
 	#await get_tree().create_timer(0.1).timeout
 	#noti.text = ""
@@ -178,9 +195,16 @@ func _on_revert_button_up() -> void:
 
 		
 func _on_zoom_value_changed(value: float) -> void:
+	var zd = value - zoom
 	zoom = value
-	#%SubViewportContainer.pivot_offset =
-	%SubViewportContainer.scale = Vector2.ONE * value
+	#imageView.pivot_offset = -Vector2(image.get_size()) / 2
+	imageView.scale = Vector2.ONE * value
+	var smp = (Vector2(image.get_size()) / 2) * zd
+	imageView.position -= smp
+	
+	var m = %viewOutline.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter('rect_size',%viewOutline.size * zoom)
 	#%SubViewportContainer.size = Vector2(image.get_size())  * value
 	#view.custom_minimum_size = Vector2.ONE * scale*100
 	#view.scale = Vector2.ONE * zoom
@@ -337,26 +361,34 @@ func _on_apply_crop_button_up() -> void:
 
 func _on_canvas_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
+		if event.pressed:
+			#line.reparent(%paintLayer)
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				%zoomSlider.value += 0.1
+			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				%zoomSlider.value -= 0.1
+			
 		if event.button_index == 1:
 			#brush.visible = !event.is_released() && currentTab == 4
 			drawing = !event.is_released() && currentTab == 4
 		
 		if event.is_released():
 			#drawing = false
+			#line.reparent(%paintViewPort)
+			#await get_tree().process_frame
+			
 			line.visible = false
 			line.clear_points()
 			nb.clear_points()
 			sb.clear_points()
 			eb.clear_points()
 			wb.clear_points()
-			pass
+			
+	
 		#print(event.button_index)
 	if event is InputEventMouse:
-		
-		#if event.is_released():
-			#brush.visible = false
-		#print("left")
-		var pos = event.position - brush.size / 2
+		var pointerPos = event.position * (1/zoom) - (imageView.position * (1/zoom) )
+		var pos = pointerPos - brush.size / 2
 		brush.position = pos
 		if drawing:
 			#Obviously, line render wont display a line if the two point are identical
@@ -364,19 +396,17 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			# thus adding an offset to the second point
 			line.visible = true
 			if line.get_point_count() == 0:
-				var offset = event.position + Vector2(0.001,0)
-				line.add_point(event.position)
+				var offset = pointerPos + Vector2(0.001,0)
+				line.add_point(pointerPos)
 				line.add_point(offset)
 				
 				if seamlessMode:
 					_add_neighor_brush_point(offset)
-					_add_neighor_brush_point(event.position)
+					_add_neighor_brush_point(pointerPos)
 			else:
-				line.add_point(event.position)
+				line.add_point(pointerPos)
 				if seamlessMode:
-					_add_neighor_brush_point(event.position)
-		
-		pass
+					_add_neighor_brush_point(pointerPos)
 	#print("evenr")
 	pass # Replace with function body.
 
@@ -472,7 +502,8 @@ func apply_effect():
 	reset_parm()
 	
 func _clear_paint():
-	paintRender.render_target_clear_mode = 2
+	paintRender.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
+	#paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
 	pass
 
 
@@ -518,4 +549,9 @@ func _on_seamless_mode_toggled(toggled_on: bool) -> void:
 func _on_save_dialog_canceled() -> void:
 	print('cancled')
 	cancled = true
+	pass # Replace with function body.
+
+
+func _on_background_resized() -> void:
+	_center_view()
 	pass # Replace with function body.
