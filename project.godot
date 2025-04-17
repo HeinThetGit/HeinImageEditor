@@ -12,11 +12,10 @@ config_version=5
 
 config/name="HeinImageEditor"
 config/features=PackedStringArray("4.4", "GL Compatibility")
-config/icon="res://icon.svg"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/hein_image_editor/plugin.cfg")
+enabled=PackedStringArray("res://addons/hein_draw/plugin.cfg")
 
 [rendering]
 
