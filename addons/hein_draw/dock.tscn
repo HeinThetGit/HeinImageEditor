@@ -21,11 +21,11 @@ bg_color = Color(1, 0, 0.0166664, 0.192157)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wpmg0"]
 shader = ExtResource("3_s85rn")
-shader_parameter/brightness = 0.189655
-shader_parameter/contrast = 0.474138
-shader_parameter/saturation = 2.12069
+shader_parameter/brightness = 0.0
+shader_parameter/contrast = 0.0
+shader_parameter/saturation = 1.0
 shader_parameter/tint_intensity = 1.0
-shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_color = Color(1, 1, 1, 1)
 
 [sub_resource type="Image" id="Image_uun6d"]
 data = {
@@ -70,7 +70,7 @@ shader_parameter/radius = 14.655
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uhf5y"]
 shader = ExtResource("8_wfuco")
 shader_parameter/threshold = 1.5
-shader_parameter/rect_size = Vector2(200, 200)
+shader_parameter/rect_size = Vector2(128, 128)
 
 [node name="HeinDraw" type="Control"]
 layout_mode = 3
