@@ -60,15 +60,23 @@ func _ready():
 	fit()
 	pass
 
+func _update_rect_size_on_shader(item : CanvasItem, rect_size : Vector2):
+	var m = item.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter('rect_size',rect_size)
+		
 func fit():
 	
 	var fitWidth = background.size.x / image.get_width()
 	var fitHeight = background.size.y / image.get_height()
 	var minimunFit = min(fitWidth, fitHeight)
 	imageView.scale = Vector2.ONE * minimunFit
+	zoom = minimunFit
 	%zoomSlider.value = minimunFit
 	
 	_center_view()
+	
+	_update_rect_size_on_shader(imageView, Vector2(image.get_size())*zoom)
 	#imageView.position = background.size / 2
 	#imageView.position -= (Vector2(image.get_size() ) / 2) * imageView.scale
 
@@ -129,12 +137,9 @@ func update():
 	cropEnd = image.get_size()
 	paintRender.size = image.get_size()
 	_set_neighbor_brush_dist()
-	%viewOutline.custom_minimum_size = Vector2(image.get_size())
+	#%viewOutline.custom_minimum_size = Vector2(image.get_size())
 	
-	%viewOutline.size = %canvas.size * zoom
-	var m = %viewOutline.material
-	if m is ShaderMaterial:
-		m.set_shader_parameter('rect_size',%viewOutline.size * zoom)
+	_update_rect_size_on_shader(imageView, Vector2(image.get_size())*zoom)
 	#noti.text = "updating..."
 	#await get_tree().create_timer(0.1).timeout
 	#noti.text = ""
@@ -179,6 +184,7 @@ func save(savePath : String):
 		print("file saved!")
 		print(savePath)
 	toast(e +" Saved! "+ savePath)
+	path = savePath
 	EditorInterface.get_resource_filesystem().scan_sources()
 
 func _on_brightness_slider_changed(value_changed: float) -> void:
@@ -202,13 +208,7 @@ func _on_zoom_value_changed(value: float) -> void:
 	var smp = (Vector2(image.get_size()) / 2) * zd
 	imageView.position -= smp
 	
-	var m = %viewOutline.material
-	if m is ShaderMaterial:
-		m.set_shader_parameter('rect_size',%viewOutline.size * zoom)
-	#%SubViewportContainer.size = Vector2(image.get_size())  * value
-	#view.custom_minimum_size = Vector2.ONE * scale*100
-	#view.scale = Vector2.ONE * zoom
-	pass # Replace with function body.
+	_update_rect_size_on_shader(imageView, Vector2(image.get_size()) * zoom)
 
 func _openLoad():
 	file_dialog.popup_centered_ratio(1)
@@ -227,6 +227,11 @@ func _on_contrast_value_drag_ended(value_changed: float) -> void:
 
 func _on_save_dialog_visibility_changed() -> void:
 	if %saveDialog.visible:
+		if path.is_empty():
+			%saveDialog.current_file = "untitled.jpg"
+		else:
+			%saveDialog.current_file = path.get_file()
+			%saveDialog.current_path = path
 		cancled = false
 	else:
 		if !cancled:
@@ -239,7 +244,13 @@ func _on_save_dialog_visibility_changed() -> void:
 
 
 func _on_save_button_button_up() -> void:
-	save(path)
+	if !path.is_empty():
+		save(path)
+	else:
+		pass
+		%saveDialog.current_file = "untitled.jpg"
+		%saveDialog.popup_centered_ratio(1)
+	
 	pass # Replace with function body.
 
 
@@ -435,6 +446,7 @@ func _on_brush_color_color_changed(color: Color) -> void:
 
 func _create_new_image(width : int, height : int, color : Color) -> void:
 	#_on_revert_button_up()
+	path = ""
 	%paintViewPort.render_target_clear_mode = 2
 	originalImage = Image.create(width, height, false, Image.FORMAT_RGBA8)
 	originalImage.fill(color)
@@ -469,12 +481,6 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 	pass # Replace with function b
 	
 
-
-func _on_rotate_snap_tab_clicked(tab: int) -> void:
-	_rotate_image(tab)
-	pass # Replace with function body.
-
-
 func _on_brush_size_value_value_changed(value: float) -> void:
 	brush.scale = Vector2.ONE * value
 	line.width = value
@@ -486,16 +492,17 @@ func _on_brush_size_value_value_changed(value: float) -> void:
 	pass # Replace with function body.
 
 
-func _on_flip_image_tab_clicked(tab: int) -> void:
+func _flipX():
 	apply_effect()
-	if tab == 0:
-		image.flip_x()
-	else:
-		image.flip_y()
-	
+	image.flip_x()
 	update()
 	fit()
-	pass # Replace with function body.
+	
+func _flipY():
+	apply_effect()
+	image.flip_y()
+	update()
+	fit()
 
 func apply_effect():
 	image = %viewport.get_texture().get_image()
@@ -564,4 +571,20 @@ func _on_save_dialog_canceled() -> void:
 
 func _on_background_resized() -> void:
 	_center_view()
+	pass # Replace with function body.
+
+
+func _adjust_height(width_value: String) -> void:
+	if %keepRatio.button_pressed:
+		var ratio :float =  image.get_height() as float / image.get_width()
+		var newHeight = width_value.to_int() * ratio
+		%height.text = str(roundi(newHeight))
+	pass # Replace with function body.
+
+
+func _adjust_width(height_value: String) -> void:
+	if %keepRatio.button_pressed:
+		var ratio = image.get_width() as float / image.get_height()
+		var newWidth = height_value.to_int() * ratio
+		%width.text = str(roundi(newWidth))
 	pass # Replace with function body.

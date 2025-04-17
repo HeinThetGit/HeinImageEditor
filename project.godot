@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="HeinImageEditor"
-config/description="FastDraw is a simple image editor addon featuring the commom operations needed for a quick adjustment."
+config/description="HeinDraw is a lightweight image editor addon that provides essential tools needed for quick image adjustments."
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="uid://cwqpsdih0a1dt"
 

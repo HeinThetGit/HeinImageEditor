@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://du4wcq27rg5jc"
-path="res://.godot/imported/pipeBrush.jpg-1f9be783ea314931cb5d48e197f17499.ctex"
+uid="uid://c4h34duqgndb2"
+path="res://.godot/imported/test.jpg-9d4b503311ff240dffffa97afd5b127a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/hein_draw/pipeBrush.jpg"
-dest_files=["res://.godot/imported/pipeBrush.jpg-1f9be783ea314931cb5d48e197f17499.ctex"]
+source_file="res://test.jpg"
+dest_files=["res://.godot/imported/test.jpg-9d4b503311ff240dffffa97afd5b127a.ctex"]
 
 [params]
 

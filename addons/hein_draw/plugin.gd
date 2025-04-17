@@ -17,6 +17,7 @@ func _exit_tree():
 	if editor:
 		#get_editor_interface().get_editor_main_screen().remove_child(editor)
 		remove_control_from_docks(editor)
+		remove_tool_menu_item("HeinDraw")
 		editor.queue_free()
 		
 
