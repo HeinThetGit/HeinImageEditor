@@ -28,6 +28,9 @@ var paintLayerMaterial : CanvasItemMaterial
 var lastStroke : Vector2
 var drawing : bool
 var seamlessMode : bool
+var hidePaintObjects : bool
+enum BrushMode {Mix, Erase, Mask, Add, Multiply}
+var brushMode : BrushMode = BrushMode.Mix
 
 var path : String
 var image: Image
@@ -71,6 +74,7 @@ func _update_rect_size_on_shader(item : CanvasItem, rect_size : Vector2):
 	var m = item.material
 	if m is ShaderMaterial:
 		m.set_shader_parameter('rect_size',rect_size)
+		m.set_shader_parameter('gridSize',rect_size)
 		
 func fit():
 	
@@ -115,6 +119,7 @@ func reset_parm():
 	brush.modulate = Color.RED
 	%brushColor.color = Color.RED
 	%brushBlend.selected = 0
+	brushMode = BrushMode.Mix
 	_on_brush_blend_tab_changed(0)
 	
 	%frameSlider.value = 0
@@ -149,6 +154,7 @@ func update():
 	paintRender.size = image.get_size()
 	_set_neighbor_brush_dist()
 	#%viewOutline.custom_minimum_size = Vector2(image.get_size())
+	
 	
 	_update_rect_size_on_shader(imageView, Vector2(image.get_size())*zoom)
 	#noti.text = "updating..."
@@ -382,17 +388,31 @@ func _on_apply_crop_button_up() -> void:
 	
 	pass # Replace with function body.
 
-
+func _hide_paint_objects():
+	await get_tree().process_frame
+	await get_tree().process_frame
+	line.reparent(%paintLayer)
+	line.clear_points()
+	nb.clear_points()
+	sb.clear_points()
+	eb.clear_points()
+	wb.clear_points()
+	line.visible = false
+	hidePaintObjects = false
+	
+	
 func _on_canvas_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
-		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
-			current_mouse_position = event.global_position
-			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
-				
+	
+	if hidePaintObjects:
+		_hide_paint_objects()
 	if event is InputEventMouseButton:
 		if event.pressed:
 			#line.reparent(%paintLayer)
-				
+			if brushMode == BrushMode.Erase:
+				%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ALWAYS
+				line.reparent(%paintViewPort)
+			else:
+				line.reparent(%paintLayer)
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				%zoomSlider.value += 0.1
 			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -406,17 +426,20 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		
 		if event.is_released():
 			#drawing = false
-			#line.reparent(%paintViewPort)
+		
 			#await get_tree().process_frame
+			line.reparent(%paintViewPort,true)
 			
-			line.visible = false
-			line.clear_points()
-			nb.clear_points()
-			sb.clear_points()
-			eb.clear_points()
-			wb.clear_points()
+			%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ONCE
 			
-	
+			hidePaintObjects = true
+		
+			#line.reparent(%viewport)
+			
+	if event is InputEventMouseMotion:
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
+			current_mouse_position = event.global_position
+			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
 		#print(event.button_index)
 	if event is InputEventMouse:
 		var pointerPos = event.position * (1/zoom) - (imageView.position * (1/zoom) )
@@ -481,19 +504,23 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 	#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 	match tab:
 		0:
+			brushMode = BrushMode.Mix
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			
 		1:
+			brushMode = BrushMode.Erase
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 		2:
+			brushMode = BrushMode.Mask
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 		3:
+			brushMode = BrushMode.Add
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
@@ -531,7 +558,7 @@ func apply_effect():
 	
 func _clear_paint():
 	paintRender.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
-	#paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
+	paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
 	pass
 
 
@@ -620,4 +647,12 @@ func _on_tex_filter_option_item_selected(index: int) -> void:
 			%SubViewportContainer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			%viewport.canvas_item_default_texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			%paintViewPort.canvas_item_default_texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	pass # Replace with function body.
+
+
+func _on_grid_toggle_toggled(toggled_on: bool) -> void:
+	var m = %SubViewportContainer.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter('grid',toggled_on)
+		m.set_shader_parameter('gridSize',Vector2(image.get_size()))
 	pass # Replace with function body.

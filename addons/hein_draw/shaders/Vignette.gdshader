@@ -16,7 +16,7 @@ void fragment() {
     float edge_dist_y = min(uv.y, 1.0 - uv.y);
 
     // Vignette effect per axis
-	
+
     float vignette_x = smoothstep(threshold, 0.0, edge_dist_x);
     float vignette_y = smoothstep(threshold * (rect_size.x / rect_size.y), 0.0, edge_dist_y);
 

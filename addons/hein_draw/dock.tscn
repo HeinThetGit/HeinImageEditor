@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://40xa4aqbciby"]
+[gd_scene load_steps=24 format=3 uid="uid://40xa4aqbciby"]
 
 [ext_resource type="Script" uid="uid://cesn513em6x4l" path="res://addons/hein_draw/dock.gd" id="1_mup7s"]
 [ext_resource type="Shader" uid="uid://hhov1n7ital4" path="res://addons/hein_draw/shaders/checkerBoard.gdshader" id="2_qodpa"]
@@ -18,7 +18,9 @@ shader_parameter/color2 = Color(0.253238, 0.253238, 0.253238, 1)
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uun6d"]
 shader = ExtResource("3_dsulp")
 shader_parameter/threshold = 2.0
-shader_parameter/rect_size = Vector2(406.26, 305.092)
+shader_parameter/grid = true
+shader_parameter/gridSize = Vector2(329.67, 241.758)
+shader_parameter/rect_size = Vector2(329.67, 241.758)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qkhg3"]
 bg_color = Color(1, 0, 0.0166664, 0.192157)
@@ -44,6 +46,9 @@ data = {
 image = SubResource("Image_dsulp")
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_lomty"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_dsulp"]
+viewport_path = NodePath("VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort")
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_wpmg0"]
 
@@ -200,6 +205,10 @@ layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
+[node name="gridToggle" type="CheckButton" parent="VSplitContainer/VBoxContainer/zoom"]
+layout_mode = 2
+text = "Grid"
+
 [node name="info" type="Label" parent="VSplitContainer/VBoxContainer/zoom"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -286,7 +295,7 @@ transparent_bg = true
 handle_input_locally = false
 anisotropic_filtering_level = 0
 gui_disable_input = true
-size = Vector2i(128, 128)
+size = Vector2i(1023, 718)
 render_target_update_mode = 4
 
 [node name="canvas" type="TextureRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport"]
@@ -300,23 +309,28 @@ mouse_filter = 2
 texture = SubResource("ImageTexture_uun6d")
 expand_mode = 1
 
-[node name="paintLayer" type="SubViewportContainer" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport"]
+[node name="paintLayer" type="TextureRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport"]
 unique_name_in_owner = true
 material = SubResource("CanvasItemMaterial_lomty")
-offset_right = 1024.0
-offset_bottom = 718.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
+texture = SubResource("ViewportTexture_dsulp")
+expand_mode = 1
 
 [node name="paintViewPort" type="SubViewport" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer"]
 unique_name_in_owner = true
 transparent_bg = true
 handle_input_locally = false
 gui_disable_input = true
-size = Vector2i(128, 128)
+size = Vector2i(588, 453)
 render_target_clear_mode = 1
-render_target_update_mode = 4
+render_target_update_mode = 1
 
 [node name="Line2D" type="Line2D" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
 unique_name_in_owner = true
@@ -371,7 +385,6 @@ end_cap_mode = 2
 
 [node name="brush" type="TextureRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
 unique_name_in_owner = true
-visible = false
 modulate = Color(1, 0, 0, 1)
 material = SubResource("CanvasItemMaterial_qkhg3")
 offset_right = 50.0
@@ -812,6 +825,7 @@ allow_greater = true
 [node name="brushSizeText" type="LineEdit" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
 unique_name_in_owner = true
 layout_mode = 2
+text = "10.0"
 
 [node name="blendMode" type="HBoxContainer" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
 layout_mode = 2
@@ -846,11 +860,11 @@ layout_mode = 2
 size_flags_horizontal = 8
 text = "Clear"
 
-[node name="Control" type="Control" parent="VSplitContainer/TabContainer/draw/HBoxContainer"]
+[node name="colorPickerContainer" type="Control" parent="VSplitContainer/TabContainer/draw/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="brushColor" type="ColorPicker" parent="VSplitContainer/TabContainer/draw/HBoxContainer/Control"]
+[node name="brushColor" type="ColorPicker" parent="VSplitContainer/TabContainer/draw/HBoxContainer/colorPickerContainer"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 1
@@ -862,11 +876,11 @@ offset_bottom = 334.0
 grow_horizontal = 0
 scale = Vector2(0.5, 0.5)
 size_flags_horizontal = 3
-color = Color(1, 0, 0, 1)
-picker_shape = 2
+color = Color(0.971071, 0.166631, 0, 1)
+color_mode = 1
+picker_shape = 4
 sampler_visible = false
 color_modes_visible = false
-sliders_visible = false
 hex_visible = false
 
 [connection signal="confirmed" from="createDialog" to="." method="_on_create_dialog_confirmed"]
@@ -878,6 +892,7 @@ hex_visible = false
 [connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/SaveButton" to="." method="_on_save_button_button_up"]
 [connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/SaveAs" to="saveDialog" method="popup_centered_ratio" binds= [1.0]]
 [connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/revert" to="." method="_on_revert_button_up"]
+[connection signal="toggled" from="VSplitContainer/VBoxContainer/zoom/gridToggle" to="." method="_on_grid_toggle_toggled"]
 [connection signal="button_up" from="VSplitContainer/VBoxContainer/zoom/fit" to="." method="fit"]
 [connection signal="value_changed" from="VSplitContainer/VBoxContainer/zoom/zoomSlider" to="." method="_on_zoom_value_changed"]
 [connection signal="gui_input" from="VSplitContainer/VBoxContainer/background" to="." method="_on_canvas_gui_input"]
@@ -908,4 +923,4 @@ hex_visible = false
 [connection signal="text_submitted" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize/brushSizeText" to="." method="_on_brush_size_text_text_submitted"]
 [connection signal="item_selected" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode/brushBlend" to="." method="_on_brush_blend_tab_changed"]
 [connection signal="button_up" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/clearDraw" to="." method="_clear_paint"]
-[connection signal="color_changed" from="VSplitContainer/TabContainer/draw/HBoxContainer/Control/brushColor" to="." method="_on_brush_color_color_changed"]
+[connection signal="color_changed" from="VSplitContainer/TabContainer/draw/HBoxContainer/colorPickerContainer/brushColor" to="." method="_on_brush_color_color_changed"]
