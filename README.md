@@ -16,5 +16,5 @@ Paint (stroke, pixel erase, seamless painting mode)
 
 More to be added in future
 
-  ![Image](https://github.com/HeinThetGit/HeinImageEditor/blob/master/addons/image_editor/screenshots/adjustment.jpg)
+  ![Image](https://github.com/HeinThetGit/HeinImageEditor/blob/master/screenshots/paint.jpg?raw=true)
   
