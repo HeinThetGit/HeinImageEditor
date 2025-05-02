@@ -18,7 +18,7 @@ shader_parameter/color2 = Color(0.253238, 0.253238, 0.253238, 1)
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uun6d"]
 shader = ExtResource("3_dsulp")
 shader_parameter/threshold = 2.0
-shader_parameter/rect_size = Vector2(155, 155)
+shader_parameter/rect_size = Vector2(406.26, 305.092)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qkhg3"]
 bg_color = Color(1, 0, 0.0166664, 0.192157)
@@ -149,54 +149,58 @@ title = "Open a File"
 mode_overrides_title = false
 filters = PackedStringArray("*.png", "*.jpg", "*.jpeg")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VSplitContainer" type="VSplitContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VSplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="menuBar" type="HBoxContainer" parent="VBoxContainer"]
+[node name="menuBar" type="HBoxContainer" parent="VSplitContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="newButton" type="Button" parent="VBoxContainer/menuBar"]
+[node name="newButton" type="Button" parent="VSplitContainer/VBoxContainer/menuBar"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "New"
 
-[node name="LoadButton" type="Button" parent="VBoxContainer/menuBar"]
+[node name="LoadButton" type="Button" parent="VSplitContainer/VBoxContainer/menuBar"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Open"
 
-[node name="SaveButton" type="Button" parent="VBoxContainer/menuBar"]
+[node name="SaveButton" type="Button" parent="VSplitContainer/VBoxContainer/menuBar"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Save"
 
-[node name="SaveAs" type="Button" parent="VBoxContainer/menuBar"]
+[node name="SaveAs" type="Button" parent="VSplitContainer/VBoxContainer/menuBar"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Save As"
 
-[node name="revert" type="Button" parent="VBoxContainer/menuBar"]
+[node name="revert" type="Button" parent="VSplitContainer/VBoxContainer/menuBar"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Reset"
 
-[node name="zoom" type="HBoxContainer" parent="VBoxContainer"]
+[node name="zoom" type="HBoxContainer" parent="VSplitContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="info" type="Label" parent="VBoxContainer/zoom"]
+[node name="info" type="Label" parent="VSplitContainer/VBoxContainer/zoom"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -204,36 +208,38 @@ text = "(128, 128) "
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="fit" type="Button" parent="VBoxContainer/zoom"]
+[node name="fit" type="Button" parent="VSplitContainer/VBoxContainer/zoom"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Fit"
 
-[node name="zoomSlider" type="HSlider" parent="VBoxContainer/zoom"]
+[node name="zoomSlider" type="HSlider" parent="VSplitContainer/VBoxContainer/zoom"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.05
-max_value = 5.0
+max_value = 1.0
 step = 0.0
 value = 0.05
+tick_count = 1
+ticks_on_borders = true
 
-[node name="noti" type="Label" parent="VBoxContainer"]
+[node name="noti" type="Label" parent="VSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "jsns"
 horizontal_alignment = 1
 
-[node name="background" type="ColorRect" parent="VBoxContainer"]
+[node name="background" type="ColorRect" parent="VSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 clip_children = 2
 material = SubResource("ShaderMaterial_8cum3")
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
+size_flags_vertical = 3
 
-[node name="view" type="TextureRect" parent="VBoxContainer/background"]
+[node name="view" type="TextureRect" parent="VSplitContainer/VBoxContainer/background"]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(100, 100)
@@ -255,34 +261,35 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 4
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="VBoxContainer/background"]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="VSplitContainer/VBoxContainer/background"]
 unique_name_in_owner = true
+texture_filter = 2
 material = SubResource("ShaderMaterial_uun6d")
 layout_mode = 1
-offset_left = 572.8
-offset_top = 96.8
-offset_right = 1596.79
-offset_bottom = 814.8
-scale = Vector2(0.05, 0.05)
+offset_left = 575.999
+offset_top = 180.999
+offset_right = 1599.99
+offset_bottom = 898.999
+scale = Vector2(1e-05, 1e-05)
 mouse_filter = 2
 
-[node name="cropRect" type="Panel" parent="VBoxContainer/background/SubViewportContainer"]
+[node name="cropRect" type="Panel" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_qkhg3")
 
-[node name="viewport" type="SubViewport" parent="VBoxContainer/background/SubViewportContainer"]
+[node name="viewport" type="SubViewport" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer"]
 unique_name_in_owner = true
 transparent_bg = true
 handle_input_locally = false
-canvas_item_default_texture_filter = 0
+anisotropic_filtering_level = 0
 gui_disable_input = true
 size = Vector2i(128, 128)
 render_target_update_mode = 4
 
-[node name="canvas" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport"]
+[node name="canvas" type="TextureRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport"]
 unique_name_in_owner = true
 material = SubResource("ShaderMaterial_wpmg0")
 offset_right = 128.0
@@ -293,7 +300,7 @@ mouse_filter = 2
 texture = SubResource("ImageTexture_uun6d")
 expand_mode = 1
 
-[node name="paintLayer" type="SubViewportContainer" parent="VBoxContainer/background/SubViewportContainer/viewport"]
+[node name="paintLayer" type="SubViewportContainer" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport"]
 unique_name_in_owner = true
 material = SubResource("CanvasItemMaterial_lomty")
 offset_right = 1024.0
@@ -302,7 +309,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="paintViewPort" type="SubViewport" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer"]
+[node name="paintViewPort" type="SubViewport" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer"]
 unique_name_in_owner = true
 transparent_bg = true
 handle_input_locally = false
@@ -311,7 +318,7 @@ size = Vector2i(128, 128)
 render_target_clear_mode = 1
 render_target_update_mode = 4
 
-[node name="Line2D" type="Line2D" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
+[node name="Line2D" type="Line2D" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
 unique_name_in_owner = true
 top_level = true
 material = SubResource("CanvasItemMaterial_wpmg0")
@@ -322,7 +329,7 @@ begin_cap_mode = 2
 end_cap_mode = 2
 round_precision = 6
 
-[node name="north" type="Line2D" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
+[node name="north" type="Line2D" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
 unique_name_in_owner = true
 top_level = true
 material = SubResource("CanvasItemMaterial_wpmg0")
@@ -332,7 +339,7 @@ joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
 
-[node name="south" type="Line2D" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
+[node name="south" type="Line2D" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
 unique_name_in_owner = true
 top_level = true
 material = SubResource("CanvasItemMaterial_wpmg0")
@@ -342,7 +349,7 @@ joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
 
-[node name="east" type="Line2D" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
+[node name="east" type="Line2D" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
 unique_name_in_owner = true
 top_level = true
 material = SubResource("CanvasItemMaterial_wpmg0")
@@ -352,7 +359,7 @@ joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
 
-[node name="west" type="Line2D" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
+[node name="west" type="Line2D" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort/Line2D"]
 unique_name_in_owner = true
 top_level = true
 material = SubResource("CanvasItemMaterial_wpmg0")
@@ -362,7 +369,7 @@ joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
 
-[node name="brush" type="TextureRect" parent="VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
+[node name="brush" type="TextureRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/paintLayer/paintViewPort"]
 unique_name_in_owner = true
 visible = false
 modulate = Color(1, 0, 0, 1)
@@ -373,7 +380,7 @@ scale = Vector2(10, 10)
 pivot_offset = Vector2(25, 25)
 texture = SubResource("CanvasTexture_8cum3")
 
-[node name="frames" type="Control" parent="VBoxContainer/background/SubViewportContainer/viewport"]
+[node name="frames" type="Control" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport"]
 unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 15
@@ -385,7 +392,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="vignette" type="ColorRect" parent="VBoxContainer/background/SubViewportContainer/viewport/frames"]
+[node name="vignette" type="ColorRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/frames"]
 unique_name_in_owner = true
 visible = false
 material = SubResource("ShaderMaterial_qaxmh")
@@ -399,7 +406,7 @@ mouse_filter = 2
 color = Color(0.99, 0.99, 0.99, 1)
 metadata/range = Vector2(0, 0.5)
 
-[node name="circleVignette" type="ColorRect" parent="VBoxContainer/background/SubViewportContainer/viewport/frames"]
+[node name="circleVignette" type="ColorRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/frames"]
 visible = false
 modulate = Color(0, 0.0392157, 1, 1)
 material = SubResource("ShaderMaterial_wfuco")
@@ -412,7 +419,7 @@ grow_vertical = 2
 mouse_filter = 2
 metadata/range = Vector2(0, 2)
 
-[node name="border" type="ColorRect" parent="VBoxContainer/background/SubViewportContainer/viewport/frames"]
+[node name="border" type="ColorRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/frames"]
 visible = false
 material = SubResource("ShaderMaterial_qruoj")
 layout_mode = 1
@@ -424,7 +431,7 @@ grow_vertical = 2
 mouse_filter = 2
 metadata/range = Vector2(0, 300)
 
-[node name="roundedCorner" type="ColorRect" parent="VBoxContainer/background/SubViewportContainer/viewport/frames"]
+[node name="roundedCorner" type="ColorRect" parent="VSplitContainer/VBoxContainer/background/SubViewportContainer/viewport/frames"]
 visible = false
 material = SubResource("ShaderMaterial_qodpa")
 layout_mode = 1
@@ -437,29 +444,29 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TabContainer" type="TabContainer" parent="VBoxContainer"]
+[node name="TabContainer" type="TabContainer" parent="VSplitContainer"]
 layout_mode = 2
-current_tab = 2
+current_tab = 4
 clip_tabs = false
 
-[node name="color" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+[node name="color" type="VBoxContainer" parent="VSplitContainer/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="brightness" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+[node name="brightness" type="HBoxContainer" parent="VSplitContainer/TabContainer/color"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/brightness"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/color/brightness"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "brightness"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="brightnessSlider" type="HSlider" parent="VBoxContainer/TabContainer/color/brightness"]
+[node name="brightnessSlider" type="HSlider" parent="VSplitContainer/TabContainer/color/brightness"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -468,19 +475,19 @@ min_value = -1.0
 max_value = 2.0
 step = 0.0
 
-[node name="contrast" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+[node name="contrast" type="HBoxContainer" parent="VSplitContainer/TabContainer/color"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/contrast"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/color/contrast"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "contrast"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="contrastValue" type="HSlider" parent="VBoxContainer/TabContainer/color/contrast"]
+[node name="contrastValue" type="HSlider" parent="VSplitContainer/TabContainer/color/contrast"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -489,19 +496,19 @@ min_value = -1.0
 max_value = 2.0
 step = 0.0
 
-[node name="saturation" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+[node name="saturation" type="HBoxContainer" parent="VSplitContainer/TabContainer/color"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/saturation"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/color/saturation"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "saturation"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="saturationValue" type="HSlider" parent="VBoxContainer/TabContainer/color/saturation"]
+[node name="saturationValue" type="HSlider" parent="VSplitContainer/TabContainer/color/saturation"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -510,30 +517,30 @@ max_value = 3.0
 step = 0.0
 value = 1.0
 
-[node name="tint" type="HBoxContainer" parent="VBoxContainer/TabContainer/color"]
+[node name="tint" type="HBoxContainer" parent="VSplitContainer/TabContainer/color"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/color/tint"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/color/tint"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Tint"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="tintColor" type="ColorPickerButton" parent="VBoxContainer/TabContainer/color/tint"]
+[node name="tintColor" type="ColorPickerButton" parent="VSplitContainer/TabContainer/color/tint"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 color = Color(1, 1, 1, 1)
 
-[node name="frame" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+[node name="frame" type="VBoxContainer" parent="VSplitContainer/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="frameOptions" type="OptionButton" parent="VBoxContainer/TabContainer/frame"]
+[node name="frameOptions" type="OptionButton" parent="VSplitContainer/TabContainer/frame"]
 unique_name_in_owner = true
 layout_mode = 2
 selected = 0
@@ -547,36 +554,36 @@ popup/item_2/id = 1
 popup/item_3/text = "Soild Bound"
 popup/item_3/id = 2
 
-[node name="color" type="HBoxContainer" parent="VBoxContainer/TabContainer/frame"]
+[node name="color" type="HBoxContainer" parent="VSplitContainer/TabContainer/frame"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="frameName" type="Label" parent="VBoxContainer/TabContainer/frame/color"]
+[node name="frameName" type="Label" parent="VSplitContainer/TabContainer/frame/color"]
 layout_mode = 2
 text = "Color"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="frameColor" type="ColorPickerButton" parent="VBoxContainer/TabContainer/frame/color"]
+[node name="frameColor" type="ColorPickerButton" parent="VSplitContainer/TabContainer/frame/color"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 alignment = 0
 color = Color(1, 1, 1, 1)
 
-[node name="amount" type="HBoxContainer" parent="VBoxContainer/TabContainer/frame"]
+[node name="amount" type="HBoxContainer" parent="VSplitContainer/TabContainer/frame"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="frameName" type="Label" parent="VBoxContainer/TabContainer/frame/amount"]
+[node name="frameName" type="Label" parent="VSplitContainer/TabContainer/frame/amount"]
 layout_mode = 2
 text = "threshold"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="frameSlider" type="HSlider" parent="VBoxContainer/TabContainer/frame/amount"]
+[node name="frameSlider" type="HSlider" parent="VSplitContainer/TabContainer/frame/amount"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 30)
 layout_mode = 2
@@ -584,46 +591,47 @@ size_flags_horizontal = 3
 max_value = 0.5
 step = 0.0
 
-[node name="transform" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+[node name="transform" type="VBoxContainer" parent="VSplitContainer/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/transform"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/transform"]
 custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 text = "Note: Changes will be rasterized after applying any transform operation"
 autowrap_mode = 2
 
-[node name="resize" type="HBoxContainer" parent="VBoxContainer/TabContainer/transform"]
+[node name="resize" type="HBoxContainer" parent="VSplitContainer/TabContainer/transform"]
 layout_mode = 2
 size_flags_horizontal = 4
 alignment = 1
 
-[node name="keepRatio" type="CheckBox" parent="VBoxContainer/TabContainer/transform/resize"]
+[node name="keepRatio" type="CheckBox" parent="VSplitContainer/TabContainer/transform/resize"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "keep aspect ratio"
 
-[node name="width" type="LineEdit" parent="VBoxContainer/TabContainer/transform/resize"]
+[node name="width" type="LineEdit" parent="VSplitContainer/TabContainer/transform/resize"]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "width"
 
-[node name="height" type="LineEdit" parent="VBoxContainer/TabContainer/transform/resize"]
+[node name="height" type="LineEdit" parent="VSplitContainer/TabContainer/transform/resize"]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "height"
 
-[node name="resizeButton" type="Button" parent="VBoxContainer/TabContainer/transform/resize"]
+[node name="resizeButton" type="Button" parent="VSplitContainer/TabContainer/transform/resize"]
 layout_mode = 2
 text = "resize"
 
-[node name="flip" type="HBoxContainer" parent="VBoxContainer/TabContainer/transform"]
+[node name="flip" type="HBoxContainer" parent="VSplitContainer/TabContainer/transform"]
 layout_mode = 2
 size_flags_horizontal = 4
 alignment = 1
 
-[node name="flipImage" type="TabBar" parent="VBoxContainer/TabContainer/transform/flip"]
+[node name="flipImage" type="TabBar" parent="VSplitContainer/TabContainer/transform/flip"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
@@ -633,20 +641,20 @@ tab_count = 2
 tab_0/title = "horizontal"
 tab_1/title = "vertical"
 
-[node name="flipX" type="Button" parent="VBoxContainer/TabContainer/transform/flip"]
+[node name="flipX" type="Button" parent="VSplitContainer/TabContainer/transform/flip"]
 layout_mode = 2
 text = "flip horizontal"
 
-[node name="flipY" type="Button" parent="VBoxContainer/TabContainer/transform/flip"]
+[node name="flipY" type="Button" parent="VSplitContainer/TabContainer/transform/flip"]
 layout_mode = 2
 text = "flip vertical"
 
-[node name="rotate" type="HBoxContainer" parent="VBoxContainer/TabContainer/transform"]
+[node name="rotate" type="HBoxContainer" parent="VSplitContainer/TabContainer/transform"]
 layout_mode = 2
 size_flags_horizontal = 4
 alignment = 1
 
-[node name="rotateSnap" type="TabBar" parent="VBoxContainer/TabContainer/transform/rotate"]
+[node name="rotateSnap" type="TabBar" parent="VSplitContainer/TabContainer/transform/rotate"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
@@ -655,56 +663,56 @@ tab_count = 2
 tab_0/title = "left"
 tab_1/title = "right"
 
-[node name="rotateLeft" type="Button" parent="VBoxContainer/TabContainer/transform/rotate"]
+[node name="rotateLeft" type="Button" parent="VSplitContainer/TabContainer/transform/rotate"]
 layout_mode = 2
 text = "rotate -90"
 
-[node name="rotateRight" type="Button" parent="VBoxContainer/TabContainer/transform/rotate"]
+[node name="rotateRight" type="Button" parent="VSplitContainer/TabContainer/transform/rotate"]
 layout_mode = 2
 text = "rotate 90"
 
-[node name="crop" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
+[node name="crop" type="VBoxContainer" parent="VSplitContainer/TabContainer"]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 0
 metadata/_tab_index = 3
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/crop"]
 custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 text = "Note: Changes will be rasterized after applying any transform operation"
 autowrap_mode = 2
 
-[node name="left" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+[node name="left" type="HBoxContainer" parent="VSplitContainer/TabContainer/crop"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/left"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/crop/left"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "left:"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="cropLeft" type="HSlider" parent="VBoxContainer/TabContainer/crop/left"]
+[node name="cropLeft" type="HSlider" parent="VSplitContainer/TabContainer/crop/left"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 1.0
 step = 0.0
 
-[node name="right" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+[node name="right" type="HBoxContainer" parent="VSplitContainer/TabContainer/crop"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/right"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/crop/right"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "right:"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="cropRight" type="HSlider" parent="VBoxContainer/TabContainer/crop/right"]
+[node name="cropRight" type="HSlider" parent="VSplitContainer/TabContainer/crop/right"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -712,36 +720,36 @@ max_value = 1.0
 step = 0.0
 value = 1.0
 
-[node name="top" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+[node name="top" type="HBoxContainer" parent="VSplitContainer/TabContainer/crop"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/top"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/crop/top"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "top:"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="cropTop" type="HSlider" parent="VBoxContainer/TabContainer/crop/top"]
+[node name="cropTop" type="HSlider" parent="VSplitContainer/TabContainer/crop/top"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 1.0
 step = 0.0
 
-[node name="buttom" type="HBoxContainer" parent="VBoxContainer/TabContainer/crop"]
+[node name="buttom" type="HBoxContainer" parent="VSplitContainer/TabContainer/crop"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/crop/buttom"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/crop/buttom"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "buttom:"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="cropButtom" type="HSlider" parent="VBoxContainer/TabContainer/crop/buttom"]
+[node name="cropButtom" type="HSlider" parent="VSplitContainer/TabContainer/crop/buttom"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -749,42 +757,50 @@ max_value = 1.0
 step = 0.0
 value = 1.0
 
-[node name="applyCrop" type="Button" parent="VBoxContainer/TabContainer/crop"]
+[node name="applyCrop" type="Button" parent="VSplitContainer/TabContainer/crop"]
 custom_minimum_size = Vector2(200, 30)
 layout_mode = 2
 size_flags_horizontal = 8
 text = "Crop"
 
-[node name="draw" type="VBoxContainer" parent="VBoxContainer/TabContainer"]
-visible = false
+[node name="draw" type="VBoxContainer" parent="VSplitContainer/TabContainer"]
 layout_mode = 2
 theme_override_constants/separation = 0
 metadata/_tab_index = 4
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw"]
+[node name="HBoxContainer" type="HBoxContainer" parent="VSplitContainer/TabContainer/draw"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/TabContainer/draw/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="VSplitContainer/TabContainer/draw/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="seamlessMode" type="CheckButton" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
+[node name="texFilterOption" type="OptionButton" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "Linear Filter"
+popup/item_0/id = 0
+popup/item_1/text = "Nearest Filter"
+popup/item_1/id = 1
+
+[node name="seamlessMode" type="CheckButton" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "brush wrap"
 
-[node name="brushSize" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
+[node name="brushSize" type="HBoxContainer" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = " brush size:"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="brushSizeValue" type="HSlider" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
+[node name="brushSizeValue" type="HSlider" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -793,22 +809,22 @@ min_value = 1.0
 value = 10.0
 allow_greater = true
 
-[node name="brushSizeText" type="LineEdit" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
+[node name="brushSizeText" type="LineEdit" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="blendMode" type="HBoxContainer" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
+[node name="blendMode" type="HBoxContainer" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode"]
+[node name="Label" type="Label" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode"]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "blend mode"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="brushBlend" type="OptionButton" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode"]
+[node name="brushBlend" type="OptionButton" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -824,15 +840,27 @@ popup/item_2/id = 2
 popup/item_3/text = "additive"
 popup/item_3/id = 3
 
-[node name="clearDraw" type="Button" parent="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
+[node name="clearDraw" type="Button" parent="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(70, 30)
 layout_mode = 2
 size_flags_horizontal = 8
 text = "Clear"
 
-[node name="brushColor" type="ColorPicker" parent="VBoxContainer/TabContainer/draw/HBoxContainer"]
-unique_name_in_owner = true
+[node name="Control" type="Control" parent="VSplitContainer/TabContainer/draw/HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="brushColor" type="ColorPicker" parent="VSplitContainer/TabContainer/draw/HBoxContainer/Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -147.0
+offset_right = 151.0
+offset_bottom = 334.0
+grow_horizontal = 0
+scale = Vector2(0.5, 0.5)
 size_flags_horizontal = 3
 color = Color(1, 0, 0, 1)
 picker_shape = 2
@@ -845,38 +873,39 @@ hex_visible = false
 [connection signal="confirmed" from="FileDialog" to="." method="_on_file_selected"]
 [connection signal="canceled" from="saveDialog" to="." method="_on_save_dialog_canceled"]
 [connection signal="visibility_changed" from="saveDialog" to="." method="_on_save_dialog_visibility_changed"]
-[connection signal="button_up" from="VBoxContainer/menuBar/newButton" to="createDialog" method="popup_centered"]
-[connection signal="button_up" from="VBoxContainer/menuBar/LoadButton" to="." method="_openLoad"]
-[connection signal="button_up" from="VBoxContainer/menuBar/SaveButton" to="." method="_on_save_button_button_up"]
-[connection signal="button_up" from="VBoxContainer/menuBar/SaveAs" to="saveDialog" method="popup_centered_ratio" binds= [1.0]]
-[connection signal="button_up" from="VBoxContainer/menuBar/revert" to="." method="_on_revert_button_up"]
-[connection signal="button_up" from="VBoxContainer/zoom/fit" to="." method="fit"]
-[connection signal="value_changed" from="VBoxContainer/zoom/zoomSlider" to="." method="_on_zoom_value_changed"]
-[connection signal="gui_input" from="VBoxContainer/background" to="." method="_on_canvas_gui_input"]
-[connection signal="resized" from="VBoxContainer/background" to="." method="_on_background_resized"]
-[connection signal="tab_changed" from="VBoxContainer/TabContainer" to="." method="_on_tab_container_tab_changed"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/color/brightness/brightnessSlider" to="." method="_on_brightness_slider_changed"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/color/contrast/contrastValue" to="." method="_on_contrast_value_drag_ended"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/color/saturation/saturationValue" to="." method="_set_shader_float" binds= ["saturation"]]
-[connection signal="color_changed" from="VBoxContainer/TabContainer/color/tint/tintColor" to="." method="_on_tint_color_color_changed"]
-[connection signal="item_selected" from="VBoxContainer/TabContainer/frame/frameOptions" to="." method="_on_frame_option_item_selected"]
-[connection signal="color_changed" from="VBoxContainer/TabContainer/frame/color/frameColor" to="." method="_frame_color_changed"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/frame/amount/frameSlider" to="." method="_frame_slider_changed"]
-[connection signal="text_changed" from="VBoxContainer/TabContainer/transform/resize/width" to="." method="_adjust_height"]
-[connection signal="text_changed" from="VBoxContainer/TabContainer/transform/resize/height" to="." method="_adjust_width"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/transform/resize/resizeButton" to="." method="_on_resize_button_button_up"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/transform/flip/flipX" to="." method="_flipX"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/transform/flip/flipY" to="." method="_flipY"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/transform/rotate/rotateLeft" to="." method="_rotate_image" binds= [1]]
-[connection signal="button_up" from="VBoxContainer/TabContainer/transform/rotate/rotateRight" to="." method="_rotate_image" binds= [0]]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/left/cropLeft" to="." method="_on_crop_left_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/right/cropRight" to="." method="_on_crop_right_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/top/cropTop" to="." method="_on_crop_top_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/crop/buttom/cropButtom" to="." method="_on_crop_buttom_value_changed"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/crop/applyCrop" to="." method="_on_apply_crop_button_up"]
-[connection signal="toggled" from="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/seamlessMode" to="." method="_on_seamless_mode_toggled"]
-[connection signal="value_changed" from="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize/brushSizeValue" to="." method="_on_brush_size_value_value_changed"]
-[connection signal="text_submitted" from="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize/brushSizeText" to="." method="_on_brush_size_text_text_submitted"]
-[connection signal="item_selected" from="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode/brushBlend" to="." method="_on_brush_blend_tab_changed"]
-[connection signal="button_up" from="VBoxContainer/TabContainer/draw/HBoxContainer/VBoxContainer/clearDraw" to="." method="_clear_paint"]
-[connection signal="color_changed" from="VBoxContainer/TabContainer/draw/HBoxContainer/brushColor" to="." method="_on_brush_color_color_changed"]
+[connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/newButton" to="createDialog" method="popup_centered"]
+[connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/LoadButton" to="." method="_openLoad"]
+[connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/SaveButton" to="." method="_on_save_button_button_up"]
+[connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/SaveAs" to="saveDialog" method="popup_centered_ratio" binds= [1.0]]
+[connection signal="button_up" from="VSplitContainer/VBoxContainer/menuBar/revert" to="." method="_on_revert_button_up"]
+[connection signal="button_up" from="VSplitContainer/VBoxContainer/zoom/fit" to="." method="fit"]
+[connection signal="value_changed" from="VSplitContainer/VBoxContainer/zoom/zoomSlider" to="." method="_on_zoom_value_changed"]
+[connection signal="gui_input" from="VSplitContainer/VBoxContainer/background" to="." method="_on_canvas_gui_input"]
+[connection signal="resized" from="VSplitContainer/VBoxContainer/background" to="." method="_on_background_resized"]
+[connection signal="tab_changed" from="VSplitContainer/TabContainer" to="." method="_on_tab_container_tab_changed"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/color/brightness/brightnessSlider" to="." method="_on_brightness_slider_changed"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/color/contrast/contrastValue" to="." method="_on_contrast_value_drag_ended"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/color/saturation/saturationValue" to="." method="_set_shader_float" binds= ["saturation"]]
+[connection signal="color_changed" from="VSplitContainer/TabContainer/color/tint/tintColor" to="." method="_on_tint_color_color_changed"]
+[connection signal="item_selected" from="VSplitContainer/TabContainer/frame/frameOptions" to="." method="_on_frame_option_item_selected"]
+[connection signal="color_changed" from="VSplitContainer/TabContainer/frame/color/frameColor" to="." method="_frame_color_changed"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/frame/amount/frameSlider" to="." method="_frame_slider_changed"]
+[connection signal="text_changed" from="VSplitContainer/TabContainer/transform/resize/width" to="." method="_adjust_height"]
+[connection signal="text_changed" from="VSplitContainer/TabContainer/transform/resize/height" to="." method="_adjust_width"]
+[connection signal="button_up" from="VSplitContainer/TabContainer/transform/resize/resizeButton" to="." method="_on_resize_button_button_up"]
+[connection signal="button_up" from="VSplitContainer/TabContainer/transform/flip/flipX" to="." method="_flipX"]
+[connection signal="button_up" from="VSplitContainer/TabContainer/transform/flip/flipY" to="." method="_flipY"]
+[connection signal="button_up" from="VSplitContainer/TabContainer/transform/rotate/rotateLeft" to="." method="_rotate_image" binds= [1]]
+[connection signal="button_up" from="VSplitContainer/TabContainer/transform/rotate/rotateRight" to="." method="_rotate_image" binds= [0]]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/crop/left/cropLeft" to="." method="_on_crop_left_value_changed"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/crop/right/cropRight" to="." method="_on_crop_right_value_changed"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/crop/top/cropTop" to="." method="_on_crop_top_value_changed"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/crop/buttom/cropButtom" to="." method="_on_crop_buttom_value_changed"]
+[connection signal="button_up" from="VSplitContainer/TabContainer/crop/applyCrop" to="." method="_on_apply_crop_button_up"]
+[connection signal="item_selected" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/texFilterOption" to="." method="_on_tex_filter_option_item_selected"]
+[connection signal="toggled" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/seamlessMode" to="." method="_on_seamless_mode_toggled"]
+[connection signal="value_changed" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize/brushSizeValue" to="." method="_on_brush_size_value_value_changed"]
+[connection signal="text_submitted" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/brushSize/brushSizeText" to="." method="_on_brush_size_text_text_submitted"]
+[connection signal="item_selected" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/blendMode/brushBlend" to="." method="_on_brush_blend_tab_changed"]
+[connection signal="button_up" from="VSplitContainer/TabContainer/draw/HBoxContainer/VBoxContainer/clearDraw" to="." method="_clear_paint"]
+[connection signal="color_changed" from="VSplitContainer/TabContainer/draw/HBoxContainer/Control/brushColor" to="." method="_on_brush_color_color_changed"]

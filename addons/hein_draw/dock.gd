@@ -32,6 +32,8 @@ var seamlessMode : bool
 var path : String
 var image: Image
 var zoom : float = 1
+var minZoom : float = 1
+var maxZoom : float = 1
 var originalImage: Image
 
 var currentTab : int
@@ -42,12 +44,17 @@ var cropEnd : Vector2
 @onready var frameOptions : OptionButton = %frameOptions
 var currentFrame : Control
 
+var init_mouse_position: Vector2
+var current_mouse_position: Vector2
+var init_imageView_position: Vector2
+
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
 	
 	brush.visible = false
 	brushMaterial = %brush.material
+	_on_brush_size_value_value_changed(10)
 	lineMaterial = line.material
 	paintLayerMaterial = %paintLayer.material
 	canvasMaterial = %canvas.material
@@ -72,8 +79,12 @@ func fit():
 	var minimunFit = min(fitWidth, fitHeight)
 	imageView.scale = Vector2.ONE * minimunFit
 	zoom = minimunFit
-	%zoomSlider.value = minimunFit
+	maxZoom = minimunFit * 3
+	minZoom = minimunFit * 0.3
 	
+	%zoomSlider.value = inverse_lerp(minZoom, maxZoom, zoom)
+	%zoomSlider.min_value = 0
+	%zoomSlider.max_value = 1
 	_center_view()
 	
 	_update_rect_size_on_shader(imageView, Vector2(image.get_size())*zoom)
@@ -201,6 +212,7 @@ func _on_revert_button_up() -> void:
 
 		
 func _on_zoom_value_changed(value: float) -> void:
+	value = lerpf(minZoom, maxZoom, value)
 	var zd = value - zoom
 	zoom = value
 	#imageView.pivot_offset = -Vector2(image.get_size()) / 2
@@ -372,14 +384,22 @@ func _on_apply_crop_button_up() -> void:
 
 
 func _on_canvas_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
+			current_mouse_position = event.global_position
+			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
+				
 	if event is InputEventMouseButton:
 		if event.pressed:
 			#line.reparent(%paintLayer)
+				
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				%zoomSlider.value += 0.1
 			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 				%zoomSlider.value -= 0.1
-			
+			if event.button_index == MOUSE_BUTTON_MIDDLE:
+				init_mouse_position = event.global_position
+				init_imageView_position = imageView.position	
 		if event.button_index == 1:
 			#brush.visible = !event.is_released() && currentTab == 4
 			drawing = !event.is_released() && currentTab == 4
@@ -403,12 +423,12 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		var pos = pointerPos - brush.size / 2
 		brush.position = pos
 		if drawing:
-			#Obviously, line render wont display a line if the two point are identical
+			#Obviously, line render wont display a line if the two points have identical position
 			#But we need to display a dot at mouse position if the pointer doesnt move
 			# thus adding an offset to the second point
 			line.visible = true
 			if line.get_point_count() == 0:
-				var offset = pointerPos + Vector2(0.001,0)
+				var offset = pointerPos + Vector2(0.01,0)
 				line.add_point(pointerPos)
 				line.add_point(offset)
 				
@@ -587,4 +607,17 @@ func _adjust_width(height_value: String) -> void:
 		var ratio = image.get_width() as float / image.get_height()
 		var newWidth = height_value.to_int() * ratio
 		%width.text = str(roundi(newWidth))
+	pass # Replace with function body.
+
+
+func _on_tex_filter_option_item_selected(index: int) -> void:
+	match index:
+		0:
+			%SubViewportContainer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			%viewport.canvas_item_default_texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			%paintViewPort.canvas_item_default_texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		1:
+			%SubViewportContainer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			%viewport.canvas_item_default_texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			%paintViewPort.canvas_item_default_texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	pass # Replace with function body.
