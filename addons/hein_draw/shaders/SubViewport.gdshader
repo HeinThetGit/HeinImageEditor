@@ -20,17 +20,17 @@ void fragment() {
 	float grid_line = 0.0;
 	if (grid){
 		//vec2 tex_size = vec2(12,12); // Texture width and height in pixels
-	    vec2 texel_pos = UV * gridSize;
-	    float thickness = 0.03;
-	    float dist_x = min(fract(texel_pos.x), 1.0 - fract(texel_pos.x));
-	    float dist_y = min(fract(texel_pos.y), 1.0 - fract(texel_pos.y));
-	    grid_line = step(dist_x, thickness) + step(dist_y, thickness);
+    vec2 texel_pos = UV * gridSize;
+    float thickness = 0.1;
+    float dist_x = min(fract(texel_pos.x), 1.0 - fract(texel_pos.x));
+    float dist_y = min(fract(texel_pos.y), 1.0 - fract(texel_pos.y));
+    grid_line = step(dist_x, thickness) + step(dist_y, thickness);
 	}else{
 		grid_line = 0.0;
 	}
     //COLOR = mix(tex_color, vec4(0), grid_line);
 	
-    COLOR = mix(tex_color,vec4(1),alpha + grid_line);
+    COLOR = mix(tex_color,vec4(0,0,0,1),alpha + grid_line);
 }
 
 //void light() {

@@ -48,6 +48,7 @@ var cropEnd : Vector2
 var currentFrame : Control
 
 var init_mouse_position: Vector2
+var prev_mouse_position : Vector2 = Vector2.ZERO
 var current_mouse_position: Vector2
 var init_imageView_position: Vector2
 
@@ -68,13 +69,20 @@ func _ready():
 	update()
 	reset_parm()
 	fit()
+	
+	for c in %colorSamples.get_children():
+		if c is ColorPickerButton:
+			c.connect("pressed", Callable(_color_sample_clicked).bind(c) )
+			print(c.name)
 	pass
 
+func _color_sample_clicked(s : ColorPickerButton):
+	s.hide()
+	pass
 func _update_rect_size_on_shader(item : CanvasItem, rect_size : Vector2):
 	var m = item.material
 	if m is ShaderMaterial:
 		m.set_shader_parameter('rect_size',rect_size)
-		m.set_shader_parameter('gridSize',rect_size)
 		
 func fit():
 	
@@ -92,6 +100,9 @@ func fit():
 	_center_view()
 	
 	_update_rect_size_on_shader(imageView, Vector2(image.get_size())*zoom)
+	var m = imageView.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter('gridSize',Vector2(image.get_size()))
 	#imageView.position = background.size / 2
 	#imageView.position -= (Vector2(image.get_size() ) / 2) * imageView.scale
 
@@ -155,7 +166,7 @@ func update():
 	_set_neighbor_brush_dist()
 	#%viewOutline.custom_minimum_size = Vector2(image.get_size())
 	
-	
+		
 	_update_rect_size_on_shader(imageView, Vector2(image.get_size())*zoom)
 	#noti.text = "updating..."
 	#await get_tree().create_timer(0.1).timeout
@@ -337,13 +348,13 @@ func _on_tab_container_tab_changed(tab: int) -> void:
 
 
 func _on_crop_right_value_changed(value: float) -> void:
-	cropEnd.x = value * image.get_width()
+	cropEnd.x = roundi(value * image.get_width())
 	_update_crop_region()
 	pass # Replace with function body.
 
 
 func _on_crop_buttom_value_changed(value: float) -> void:
-	cropEnd.y = value * image.get_size().y
+	cropEnd.y = roundi( value * image.get_size().y )
 	_update_crop_region()
 	
 	pass # Replace with function body.
@@ -354,7 +365,7 @@ func _update_crop_region():
 	%cropRect.size =  cropEnd - cropStart
 	pass
 func _on_crop_top_value_changed(value: float) -> void:
-	cropStart.y = value * image.get_height()
+	cropStart.y =  roundi(value * image.get_height())
 	_update_crop_region()
 	#var e = %cropRect.get_end()
 	#e.y
@@ -363,7 +374,7 @@ func _on_crop_top_value_changed(value: float) -> void:
 
 
 func _on_crop_left_value_changed(value: float) -> void:
-	cropStart.x = value * image.get_width()
+	cropStart.x =  roundi(value * image.get_width())
 	_update_crop_region()
 	pass # Replace with function body.
 
@@ -400,6 +411,9 @@ func _hide_paint_objects():
 	line.visible = false
 	hidePaintObjects = false
 	
+
+func _get_pointer_pos(mousePos : Vector2):
+	return mousePos * (1/zoom) - (imageView.position * (1/zoom) )
 	
 func _on_canvas_gui_input(event: InputEvent) -> void:
 	
@@ -407,8 +421,15 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		_hide_paint_objects()
 	if event is InputEventMouseButton:
 		if event.pressed:
-			#line.reparent(%paintLayer)
-			if brushMode == BrushMode.Erase:
+			# drawing a straight line from previous mouse position if user hold shift
+			if Input.is_key_pressed(KEY_SHIFT):
+				if prev_mouse_position.x > 0:
+					#prev_mouse_position = event.global_position
+					line.add_point(prev_mouse_position)
+					print('shiftpresed')
+			prev_mouse_position = _get_pointer_pos(event.position)
+					
+			if brushMode == BrushMode.Erase || brushMode == BrushMode.Mask:
 				%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ALWAYS
 				line.reparent(%paintViewPort)
 			else:
@@ -423,7 +444,6 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		if event.button_index == 1:
 			#brush.visible = !event.is_released() && currentTab == 4
 			drawing = !event.is_released() && currentTab == 4
-		
 		if event.is_released():
 			#drawing = false
 		
@@ -442,7 +462,7 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
 		#print(event.button_index)
 	if event is InputEventMouse:
-		var pointerPos = event.position * (1/zoom) - (imageView.position * (1/zoom) )
+		var pointerPos = _get_pointer_pos(event.position)
 		var pos = pointerPos - brush.size / 2
 		brush.position = pos
 		if drawing:
@@ -559,6 +579,7 @@ func apply_effect():
 func _clear_paint():
 	paintRender.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
 	paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
+	prev_mouse_position = Vector2(-1,-1)#
 	pass
 
 
@@ -655,4 +676,16 @@ func _on_grid_toggle_toggled(toggled_on: bool) -> void:
 	if m is ShaderMaterial:
 		m.set_shader_parameter('grid',toggled_on)
 		m.set_shader_parameter('gridSize',Vector2(image.get_size()))
+	pass # Replace with function body.
+
+
+func _on_brush_types_item_selected(index: int) -> void:
+	var brushTexture : Texture2D = %brushTypes.get_item_icon(index)
+	line.texture = brushTexture
+	nb.texture = brushTexture
+	sb.texture = brushTexture
+	eb.texture = brushTexture
+	wb.texture = brushTexture
+	
+	
 	pass # Replace with function body.
