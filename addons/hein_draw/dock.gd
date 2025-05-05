@@ -18,6 +18,9 @@ var cancled : bool
 @onready var line : Line2D = %Line2D
 @onready var pointer : Control = %pointer
 
+var layerMatMix : ShaderMaterial
+var layerMatSub : ShaderMaterial
+
 var canvasMaterial : ShaderMaterial
 var brushMaterial : CanvasItemMaterial
 var lineMaterial : CanvasItemMaterial
@@ -53,10 +56,14 @@ var init_imageView_position: Vector2
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
-	
+	layerMatMix = ShaderMaterial.new()
+	layerMatMix.shader = load("res://addons/hein_draw/shaders/LayerMix.gdshader")
+	layerMatSub = ShaderMaterial.new()
+	layerMatSub.shader = load("res://addons/hein_draw/shaders/LayerSubStractive.gdshader")
 	#brush.visible = false
 	brushMaterial = %brush.material
 	_on_brush_size_value_value_changed(10)
+	_on_brush_types_item_selected(0)
 	lineMaterial = line.material
 	paintLayerMaterial = %paintLayer.material
 	canvasMaterial = %canvas.material
@@ -413,14 +420,9 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		_hide_paint_objects()
 	if event is InputEventMouseButton:
 		if event.pressed:
-			# drawing a straight line from previous mouse position if user hold shift
-			if Input.is_key_pressed(KEY_SHIFT):
-				if prev_mouse_position.x > 0:
-					line.add_point(prev_mouse_position)
-			prev_mouse_position = _get_pointer_pos(event.position)
 
 			if brushMode == BrushMode.Erase || brushMode == BrushMode.Mask:
-				%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ALWAYS
+				#%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ALWAYS
 				pointer.reparent(%paintViewPort)
 			else:
 				pointer.reparent(%paintLayer)
@@ -435,15 +437,17 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			#brush.visible = !event.is_released() && currentTab == 4
 			drawing = !event.is_released() && currentTab == 4
 		if event.is_released():
+			# drawing a straight line from previous mouse position if user hold shift
+			if Input.is_key_pressed(KEY_SHIFT):
+				if prev_mouse_position.x > 0:
+					line.add_point(prev_mouse_position)
+			prev_mouse_position = _get_pointer_pos(event.position)
+			
 			#drawing = false
-		
-			#await get_tree().process_frame
-			pointer.reparent(%paintViewPort,true)
-			
-			%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ONCE
-			
-			hidePaintObjects = true
-			#line.reparent(%viewport)
+			if event.button_index == 1:
+				pointer.reparent(%paintViewPort,true)
+				#%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ONCE
+				hidePaintObjects = true
 			
 	if event is InputEventMouseMotion:
 		var pointerPos = _get_pointer_pos(event.position)
@@ -460,7 +464,7 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 		#brush.position = pointerPos
 		if drawing:
 			
-			line.add_point(pointerPos)
+			line.add_point(line.get_local_mouse_position())
 			if seamlessMode:
 				_add_neighor_brush_point(pointerPos)
 	#print("evenr")
@@ -507,7 +511,7 @@ func _on_brush_color_color_changed(color: Color) -> void:
 func _create_new_image(width : int, height : int, color : Color) -> void:
 	#_on_revert_button_up()
 	path = ""
-	%paintViewPort.render_target_clear_mode = 2
+	%paintViewPort.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
 	originalImage = Image.create(width, height, false, Image.FORMAT_RGBA8)
 	originalImage.fill(color)
 	image = originalImage.duplicate()
@@ -522,18 +526,21 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 	match tab:
 		0:
 			brushMode = BrushMode.Mix
-			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			%paintLayer.material = layerMatMix
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			
 		1:
 			brushMode = BrushMode.Erase
-			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			%paintLayer.material = layerMatSub
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 		2:
 			brushMode = BrushMode.Mask
-			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+			%paintLayer.material = layerMatSub
+			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 		3:
@@ -579,7 +586,7 @@ func apply_effect():
 	
 func _clear_paint():
 	paintRender.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
-	paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
+	#paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
 	prev_mouse_position = Vector2(-1,-1)#
 	pass
 

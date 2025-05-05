@@ -1,0 +1,6 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://dov7r50lf6gnx"]
+
+[ext_resource type="Shader" uid="uid://bdmm8xa7eowgf" path="res://addons/hein_draw/shaders/LayerMix.gdshader" id="1_sgq4s"]
+
+[resource]
+shader = ExtResource("1_sgq4s")
