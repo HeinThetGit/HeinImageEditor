@@ -15,11 +15,8 @@ var cancled : bool
 @onready var canvas : TextureRect = %canvas
 @onready var paintRender : SubViewport = %paintViewPort
 @onready var brush : TextureRect = %brush
-@onready var nb : Line2D = %north
-@onready var sb : Line2D = %south
-@onready var eb : Line2D = %east
-@onready var wb : Line2D = %west
 @onready var line : Line2D = %Line2D
+@onready var pointer : Control = %pointer
 
 var canvasMaterial : ShaderMaterial
 var brushMaterial : CanvasItemMaterial
@@ -31,6 +28,7 @@ var seamlessMode : bool
 var hidePaintObjects : bool
 enum BrushMode {Mix, Erase, Mask, Add, Multiply}
 var brushMode : BrushMode = BrushMode.Mix
+var brushSlot : int = 0
 
 var path : String
 var image: Image
@@ -56,7 +54,7 @@ func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
 	
-	brush.visible = false
+	#brush.visible = false
 	brushMaterial = %brush.material
 	_on_brush_size_value_value_changed(10)
 	lineMaterial = line.material
@@ -69,13 +67,8 @@ func _ready():
 	update()
 	reset_parm()
 	fit()
+	#%brushTypes.select(0)
 	
-	for c in %colorSamples.get_children():
-		if c is ColorPickerButton:
-			c.connect("pressed", Callable(_color_sample_clicked).bind(c) )
-			print(c.name)
-	pass
-
 func _color_sample_clicked(s : ColorPickerButton):
 	s.hide()
 	pass
@@ -163,7 +156,7 @@ func update():
 	cropStart = Vector2.ZERO
 	cropEnd = image.get_size()
 	paintRender.size = image.get_size()
-	_set_neighbor_brush_dist()
+	_brush_warp(seamlessMode)
 	#%viewOutline.custom_minimum_size = Vector2(image.get_size())
 	
 		
@@ -337,7 +330,7 @@ func _set_shader_float(value: float, extra_arg_0: String) -> void:
 func _on_tab_container_tab_changed(tab: int) -> void:
 	currentTab = tab
 	%cropRect.visible = false
-	%brush.visible = false
+	#%brush.visible = false
 	#%viewport.render_target_clear_mode = 1
 	match tab:
 		3:
@@ -402,19 +395,18 @@ func _on_apply_crop_button_up() -> void:
 func _hide_paint_objects():
 	await get_tree().process_frame
 	await get_tree().process_frame
-	line.reparent(%paintLayer)
+	pointer.reparent(%paintLayer)
 	line.clear_points()
-	nb.clear_points()
-	sb.clear_points()
-	eb.clear_points()
-	wb.clear_points()
-	line.visible = false
+	for c in line.get_children():
+		if c is Line2D:
+			c.clear_points()
+	pointer.visible = true
 	hidePaintObjects = false
 	
 
 func _get_pointer_pos(mousePos : Vector2):
 	return mousePos * (1/zoom) - (imageView.position * (1/zoom) )
-	
+
 func _on_canvas_gui_input(event: InputEvent) -> void:
 	
 	if hidePaintObjects:
@@ -424,16 +416,14 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			# drawing a straight line from previous mouse position if user hold shift
 			if Input.is_key_pressed(KEY_SHIFT):
 				if prev_mouse_position.x > 0:
-					#prev_mouse_position = event.global_position
 					line.add_point(prev_mouse_position)
-					print('shiftpresed')
 			prev_mouse_position = _get_pointer_pos(event.position)
-					
+
 			if brushMode == BrushMode.Erase || brushMode == BrushMode.Mask:
 				%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ALWAYS
-				line.reparent(%paintViewPort)
+				pointer.reparent(%paintViewPort)
 			else:
-				line.reparent(%paintLayer)
+				pointer.reparent(%paintLayer)
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				%zoomSlider.value += 0.1
 			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -448,62 +438,69 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			#drawing = false
 		
 			#await get_tree().process_frame
-			line.reparent(%paintViewPort,true)
+			pointer.reparent(%paintViewPort,true)
 			
 			%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ONCE
 			
 			hidePaintObjects = true
-		
 			#line.reparent(%viewport)
 			
 	if event is InputEventMouseMotion:
+		var pointerPos = _get_pointer_pos(event.position)
+		#var pos = pointerPos - Vector2(25,25)
+		var bp = pointerPos - (brush.size / 2)
+		brush.position = imageView.get_local_mouse_position() - (brush.size / 2)
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
 			current_mouse_position = event.global_position
 			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
 		#print(event.button_index)
 	if event is InputEventMouse:
 		var pointerPos = _get_pointer_pos(event.position)
-		var pos = pointerPos - brush.size / 2
-		brush.position = pos
+		var pos = pointerPos
+		#brush.position = pointerPos
 		if drawing:
-			#Obviously, line render wont display a line if the two points have identical position
-			#But we need to display a dot at mouse position if the pointer doesnt move
-			# thus adding an offset to the second point
-			line.visible = true
-			if line.get_point_count() == 0:
-				var offset = pointerPos + Vector2(0.01,0)
-				line.add_point(pointerPos)
-				line.add_point(offset)
-				
-				if seamlessMode:
-					_add_neighor_brush_point(offset)
-					_add_neighor_brush_point(pointerPos)
-			else:
-				line.add_point(pointerPos)
-				if seamlessMode:
-					_add_neighor_brush_point(pointerPos)
+			
+			line.add_point(pointerPos)
+			if seamlessMode:
+				_add_neighor_brush_point(pointerPos)
 	#print("evenr")
 	pass # Replace with function body.
 
 func _add_neighor_brush_point(pos : Vector2):
-	nb.add_point(pos)
-	sb.add_point(pos)
-	eb.add_point(pos)
-	wb.add_point(pos)
+	for c in line.get_children():
+		if c is Line2D:
+			c.add_point(pos)
 
-func _set_neighbor_brush_dist():
-	nb.position.y = -%canvas.size.y
-	sb.position.y = %canvas.size.y
-	eb.position.x = %canvas.size.x
-	wb.position.x = -%canvas.size.x
+func _brush_warp(on):
+	if on:
+		for c in brush.get_children():
+			c.visible = true
+		for c in line.get_children():
+			c.visible = true
+		brush.get_node('e').position.x = -%canvas.size.x
+		brush.get_node('w').position.x = %canvas.size.x
+		brush.get_node('s').position.y = %canvas.size.y
+		brush.get_node('n').position.y = -%canvas.size.y
+		
+		line.get_node('n').position.y = -%canvas.size.y
+		line.get_node('s').position.y = %canvas.size.y
+		line.get_node('w').position.x = %canvas.size.x
+		line.get_node('e').position.x = -%canvas.size.x
+	else:
+		for c in brush.get_children():
+			c.visible = false
+		for c in line.get_children():
+			c.visible = false
 	
 func _on_brush_color_color_changed(color: Color) -> void:
 	brush.modulate = color
 	line.default_color = color
-	sb.default_color = color
-	nb.default_color = color
-	eb.default_color = color
-	wb.default_color = color
+	for c in line.get_children():
+		if c is Line2D:
+			c.default_color = color
+	for c in brush.get_children():
+		if c is TextureRect:
+			c.modulate = color
 	pass # Replace with function body.
 
 
@@ -549,13 +546,17 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 	
 
 func _on_brush_size_value_value_changed(value: float) -> void:
-	brush.scale = Vector2.ONE * value
-	line.width = value
+	brush.size = Vector2.ONE * value
+	for c in brush.get_children():
+		if c is TextureRect:
+			c.size = brush.size
+			
+	line.width = value * 0.75
+	for c in line.get_children():
+		if c is Line2D:
+			c.width = line.width
+			
 	%brushSizeText.text = str(value)
-	nb.width = value
-	sb.width = value
-	eb.width = value
-	wb.width = value
 	pass # Replace with function body.
 
 
@@ -625,8 +626,7 @@ func _on_frame_option_item_selected(index: int) -> void:
 
 
 func _on_seamless_mode_toggled(toggled_on: bool) -> void:
-	_set_neighbor_brush_dist()
-	print(nb.position)
+	_brush_warp(toggled_on)
 	seamlessMode = toggled_on
 	pass # Replace with function body.
 
@@ -680,12 +680,23 @@ func _on_grid_toggle_toggled(toggled_on: bool) -> void:
 
 
 func _on_brush_types_item_selected(index: int) -> void:
+	brushSlot = index
 	var brushTexture : Texture2D = %brushTypes.get_item_icon(index)
-	line.texture = brushTexture
-	nb.texture = brushTexture
-	sb.texture = brushTexture
-	eb.texture = brushTexture
-	wb.texture = brushTexture
+	#line.texture = brushTexture
+	#for c in line.get_children():
+		#if c is Line2D:
+			#c.texture = line.texture
+	brush.texture = brushTexture
+	for c in brush.get_children():
+		if c is TextureRect:
+			c.texture = brush.texture
+	line.visible = brushSlot == 0
+	#%brush.visible = brushSlot > 0
+
+	#nb.texture = brushTexture
+	#sb.texture = brushTexture
+	#eb.texture = brushTexture
+	#wb.texture = brushTexture
 	
 	
 	pass # Replace with function body.
