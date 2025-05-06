@@ -1,5 +1,5 @@
 shader_type canvas_item;
-render_mode blend_mix, unshaded;
+render_mode blend_premul_alpha, unshaded;
 uniform float brightness = 2.0;
 void vertex() {
 	// Called for every vertex the material is visible on.
@@ -8,7 +8,7 @@ void vertex() {
 void fragment() {
 	
 	float a = COLOR.a;
-	vec4 c = COLOR * brightness;
+	vec4 c = COLOR * a;
 	c.a = a;
 	COLOR = c;
 	// Called for every pixel the material is visible on.
