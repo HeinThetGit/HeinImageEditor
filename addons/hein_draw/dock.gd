@@ -17,12 +17,11 @@ var cancled : bool
 @onready var brush : TextureRect = %brush
 @onready var line : Line2D = %Line2D
 @onready var pointer : Control = %pointer
+var history : Array[Image]
+var currentHistory : int
 
 var effectShaders : Array[Shader]
 var currentEffect : int
-
-var layerMatMix : ShaderMaterial
-var layerMatSub : ShaderMaterial
 
 var canvasMaterial : ShaderMaterial
 var brushMaterial : CanvasItemMaterial
@@ -31,9 +30,10 @@ var paintLayerMaterial : CanvasItemMaterial
 var lastStroke : Vector2
 var drawing : bool
 var seamlessMode : bool
-var hidePaintObjects : bool
+enum StrokeMode {Press, Release, Continuous}
 enum BrushMode {Mix, Erase, Mask, Add, Multiply}
 var brushMode : BrushMode = BrushMode.Mix
+var continuousBrush : bool = false
 var brushSlot : int = 0
 
 var path : String
@@ -59,16 +59,13 @@ var init_imageView_position: Vector2
 func _ready():
 	#file_dialog.connect("confirmed",Callable(save) )
 	#file_dialog.set_meta('created_by',self)
-	layerMatMix = ShaderMaterial.new()
-	layerMatMix.shader = load("res://addons/hein_draw/shaders/LayerMix.gdshader")
-	layerMatSub = ShaderMaterial.new()
-	layerMatSub.shader = load("res://addons/hein_draw/shaders/LayerSubStractive.gdshader")
+
 	#brush.visible = false
 	brushMaterial = %brush.material
 	_on_brush_size_value_value_changed(10)
 	_on_brush_types_item_selected(0)
 	lineMaterial = line.material
-	#paintLayerMaterial = %paintLayer.material
+	paintLayerMaterial = %paintLayer.material
 	canvasMaterial = %canvas.material
 	var t : Texture2D = %canvas.texture
 	originalImage = t.get_image()
@@ -101,6 +98,9 @@ func _load_effects():
 	dir.list_dir_end()
 	
 func _load_brushes():
+	for i in range(%brushTypes.item_count, 0, - 1):
+		if i > 0:
+			%brushTypes.remove_item(i)
 	var path :='res://addons/hein_draw/brushes/'
 	var dir = DirAccess.open(path)
 	dir.list_dir_begin()
@@ -177,13 +177,18 @@ func reset_parm():
 	%frameColor.color = Color.WHITE
 	_frame_color_changed(Color.WHITE)
 	#%frameOptions.select(0)
-	
+	var m = %canvas.material
+	if m is ShaderMaterial:
+		m.shader.reset_state()
+		m.reset_state()
 	pass
 func _on_file_selected():
 	toast(file_dialog.current_path)
 	path = file_dialog.current_path
 	originalImage = Image.load_from_file(path)
 	image = originalImage.duplicate()
+	history.clear()
+	currentHistory = 0
 	update()
 	fit()
 	reset_parm()
@@ -260,13 +265,14 @@ func _on_brightness_slider_changed(value_changed: float) -> void:
 
 
 func _on_revert_button_up() -> void:
+	_revert()
+	pass # Replace with function body.
+func _revert():
 	image = originalImage.duplicate()
 	reset_parm()
 	_clear_paint()
 	update()
 	fit()
-	pass # Replace with function body.
-
 		
 func _on_zoom_value_changed(value: float) -> void:
 	value = lerpf(minZoom, maxZoom, value)
@@ -381,9 +387,9 @@ func _on_tab_container_tab_changed(tab: int) -> void:
 	#%brush.visible = false
 	#%viewport.render_target_clear_mode = 1
 	match tab:
-		3:
+		2:#crop
 			%cropRect.visible = true
-		4:
+		3:#draw
 			%pointer.visible = true
 			%viewport.render_target_clear_mode = 0
 	pass # Replace with function body.
@@ -441,16 +447,25 @@ func _on_apply_crop_button_up() -> void:
 	
 	pass # Replace with function body.
 
-func _hide_paint_objects():
-	await get_tree().process_frame
-	await get_tree().process_frame
-	pointer.reparent(%paintLayer)
+func _reset_pointer():
 	line.clear_points()
 	for c in line.get_children():
 		if c is Line2D:
 			c.clear_points()
-	pointer.visible = currentTab == 4
-	hidePaintObjects = false
+	pointer.reparent(%paintLayer)
+	pointer.visible = currentTab == 3
+	brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+	lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+		
+func _stamp():
+	_update_brush_mode()
+	pointer.reparent(%paintViewPort,true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_reset_pointer()
+	
+	
 	
 
 func _get_pointer_pos(mousePos : Vector2):
@@ -458,12 +473,16 @@ func _get_pointer_pos(mousePos : Vector2):
 
 func _on_canvas_gui_input(event: InputEvent) -> void:
 	
-	if hidePaintObjects:
-		_hide_paint_objects()
 	if event is InputEventMouseButton:
 		if event.pressed:
 			if event.button_index == 1:
-				pointer.reparent(%paintViewPort)
+				if currentTab == 3:
+					_reset_pointer()
+					if continuousBrush:
+						_update_brush_mode()
+						pointer.reparent(%paintViewPort)
+					else:
+						pointer.reparent(%paintLayer)
 				
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				%zoomSlider.value += 0.1
@@ -474,7 +493,7 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 				init_imageView_position = imageView.position	
 		if event.button_index == 1:
 			#brush.visible = !event.is_released() && currentTab == 4
-			drawing = !event.is_released() && currentTab == 4
+			drawing = !event.is_released() && currentTab == 3
 		if event.is_released():
 			# drawing a straight line from previous mouse position if user hold shift
 			if Input.is_key_pressed(KEY_SHIFT):
@@ -484,10 +503,15 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			
 			#drawing = false
 			if event.button_index == 1:
-				pointer.reparent(%paintLayer)
+				#pointer.reparent(%paintLayer)
 				#pointer.reparent(%paintViewPort,true)
 				#%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ONCE
-				hidePaintObjects = true
+				if currentTab == 3:
+					if !continuousBrush:
+						_stamp()
+					else:
+						_reset_pointer()
+						
 			
 	if event is InputEventMouseMotion:
 		var pointerPos = _get_pointer_pos(event.position)
@@ -560,6 +584,19 @@ func _create_new_image(width : int, height : int, color : Color) -> void:
 	pass # Replace with function body.
 
 
+func _update_brush_mode():
+	match brushMode:
+		BrushMode.Mix:
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+		BrushMode.Erase:
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+		BrushMode.Mask:
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			
+	pass
 func _on_brush_blend_tab_changed(tab: int) -> void:
 	#brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 	#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
@@ -567,22 +604,22 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 		0:
 			brushMode = BrushMode.Mix
 			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-			%paintLayer.material = layerMatMix
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 			
 		1:
 			brushMode = BrushMode.Erase
 			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-			%paintLayer.material = layerMatSub
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 		2:
 			brushMode = BrushMode.Mask
-			%paintLayer.material = layerMatSub
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 		3:
 			brushMode = BrushMode.Add
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
@@ -619,10 +656,39 @@ func _flipY():
 	update()
 	fit()
 
-func apply_effect():
-	image = %viewport.get_texture().get_image()
+func undo():
+	currentHistory -= 1
+	if currentHistory < 0:
+		_revert()
+		return
+	currentHistory = clampi(currentHistory,0,history.size() - 1)
+	apply_history()
+	
+func redo():
+	currentHistory += 1
+	currentHistory = clampi(currentHistory,0,history.size() - 1)
+	apply_history()
+	
+func apply_history():
+	if currentHistory < history.size():
+		image = history[currentHistory]
 	_clear_paint()
 	reset_parm()
+	update()
+	fit()
+	
+func _make_history():
+	image = %viewport.get_texture().get_image()
+	history.append(image)
+	currentHistory = history.size() - 1
+	
+func apply_effect():
+	_make_history()
+	_on_frame_option_item_selected(currentEffect)
+	_clear_paint()
+	reset_parm()
+	update()
+	fit()
 	
 func _clear_paint():
 	paintRender.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
@@ -642,6 +708,11 @@ func _on_brush_size_text_text_submitted(new_text: String) -> void:
 	pass # Replace with function body.
 
 
+func _effect_bool_changed(value : bool, parm : String, p : Control):
+	var m = %canvas.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter(parm, value)
+		
 func _effect_color_changed(value : Color, parm : String, p : Control):
 	var m = %canvas.material
 	if m is ShaderMaterial:
@@ -662,21 +733,29 @@ func _on_frame_option_item_selected(index: int) -> void:
 	currentEffect = index
 	for c in %effectParms.get_children():
 		c.queue_free()
-	var m = canvas.material
+	var m = ShaderMaterial.new()
 	if m is  ShaderMaterial:
 		m.shader = effectShaders[currentEffect]
 		var v = m.shader.get_shader_uniform_list()
 		print(v)
 		for d in v:
-			var defaultValue = m.get_shader_parameter(d.name)
-			if !defaultValue:
-				defaultValue = 0
+
 			match d.type:
+				1:#bool uniform
+					var p = %uniforms.get_node("bool").duplicate()
+					p.get_node('name').text = d.name
+					var checkButton  : CheckButton = p.get_node('value')
+					checkButton.button_pressed = false
+					m.set_shader_parameter(d.name, false)
+					checkButton.toggled.connect(   Callable(_effect_bool_changed).bind(d.name, p) )
+					%effectParms.add_child(p)
+					
 				20:#color uniform
 					var p = %uniforms.get_node("color").duplicate()
 					p.get_node('name').text = d.name
 					var colorpicker  : ColorPickerButton = p.get_node('value')
-					colorpicker.color = defaultValue
+					colorpicker.color = Color.WHITE
+					m.set_shader_parameter(d.name, Color.WHITE)
 					colorpicker.color_changed.connect(   Callable(_effect_color_changed).bind(d.name, p) )
 					%effectParms.add_child(p)
 					
@@ -686,8 +765,8 @@ func _on_frame_option_item_selected(index: int) -> void:
 					var s : HSlider= p.get_node('slider')
 					var tb  : LineEdit = p.get_node('value')
 					var hints : PackedStringArray = d.hint_string.split(',')
-					s.value = defaultValue
-					tb.text = '%.2f' % defaultValue
+					s.value = 0
+					tb.text = '%.2f' % 0
 					if hints.size() > 1:
 						s.min_value = hints[0].to_float()
 						s.max_value = hints[1].to_float()
@@ -697,7 +776,7 @@ func _on_frame_option_item_selected(index: int) -> void:
 					tb.text_submitted.connect(   Callable(_effect_float_value_changed).bind(d.name, p) )
 					%effectParms.add_child(p)
 		%uniforms.visible = false
-			
+		canvas.material = m
 	#if currentFrame:
 		#currentFrame.visible = false
 		#currentFrame = null
@@ -781,6 +860,7 @@ func _on_grid_toggle_toggled(toggled_on: bool) -> void:
 
 func _on_brush_types_item_selected(index: int) -> void:
 	brushSlot = index
+	continuousBrush = index > 0
 	var brushTexture : Texture2D = %brushTypes.get_item_icon(index)
 	#line.texture = brushTexture
 	#for c in line.get_children():

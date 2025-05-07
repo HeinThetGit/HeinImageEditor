@@ -3,8 +3,8 @@ shader_type canvas_item;
 //uniform float strength_x : hint_range(0.0, 2.0) = 1.0;
 //uniform float strength_y : hint_range(0.0, 2.0) = 1.0;
 
-uniform float X_amount : hint_range(0.001, 0.5) = 0.1;
-uniform float Y_amount : hint_range(0.001, 0.5) = 0.1;
+uniform float X_amount : hint_range(0.001, 0.5) = 0.0;
+uniform float Y_amount : hint_range(0.001, 0.5) = 0.0;
 uniform vec4 color : source_color = vec4(1);
 //uniform vec2 rect_size = vec2(512.0,512.0);
 
