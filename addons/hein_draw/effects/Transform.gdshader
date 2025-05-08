@@ -1,5 +1,6 @@
 shader_type canvas_item;
 
+uniform vec2 ofc = vec2(0);
 uniform float offsetX : hint_range(-1.0, 1.0) = 0.0;
 uniform float offsetY : hint_range(-1.0, 1.0) = 0;
 uniform float scale : hint_range(-1, 3.0) = 0;
@@ -21,7 +22,7 @@ void fragment() {
 	uv -= vec2(0.5);
 	uv *= 1.0 / (scale + 1.0);
 	// Apply rotation
-	float rot = radians(rotation);
+	float rot = radians(rotation + ofc.x);
     float cos_angle = cos(rot);
     float sin_angle = sin(rot);
     mat2 rot_matrix = mat2(

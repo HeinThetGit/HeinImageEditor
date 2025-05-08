@@ -1,5 +1,4 @@
 shader_type canvas_item;
-
 uniform float threshold : hint_range(0.0, 100.0) = 20.0;
 uniform bool grid;
 uniform vec2 gridSize = vec2(10.0,10.0);

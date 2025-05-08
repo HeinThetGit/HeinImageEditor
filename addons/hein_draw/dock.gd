@@ -6,7 +6,6 @@ extends Control
 @onready var file_dialog = $FileDialog
 var cancled : bool
 #@onready var load_button = $VBoxContainer/LoadButton
-@onready var slider : Slider = %brightnessSlider
 @onready var save_button = %SaveButton
 @onready var view : TextureRect = %view
 @onready var noti : Label = %noti
@@ -17,8 +16,15 @@ var cancled : bool
 @onready var brush : TextureRect = %brush
 @onready var line : Line2D = %Line2D
 @onready var pointer : Control = %pointer
+
+var randomBrushRotation : float
+
+#Undo Redo
+var undoCount : int = 10
 var history : Array[Image]
 var currentHistory : int
+var painterHistory : Array[Image]
+var currentPainterHistory : int
 
 var effectShaders : Array[Shader]
 var currentEffect : int
@@ -98,9 +104,9 @@ func _load_effects():
 	dir.list_dir_end()
 	
 func _load_brushes():
-	for i in range(%brushTypes.item_count, 0, - 1):
-		if i > 0:
-			%brushTypes.remove_item(i)
+	%brushTypes.clear()
+	%brushTypes.add_icon_item(load("res://addons/hein_draw/icons/circle.png"))
+	%brushTypes.add_icon_item(load("res://addons/hein_draw/icons/square.png"))
 	var path :='res://addons/hein_draw/brushes/'
 	var dir = DirAccess.open(path)
 	dir.list_dir_begin()
@@ -155,18 +161,7 @@ func _center_view():
 
 	
 func reset_parm():
-	#canvasMaterial.set_shader_parameter("brightness",0)
-	%brightnessSlider.value = 0
-	_on_brightness_slider_changed(0)
-	#canvasMaterial.set_shader_parameter("contrast",0)
-	%contrastValue.value = 0
-	_on_contrast_value_drag_ended(0)
-	
-	%saturationValue.value = 1
-	_set_shader_float(1,'saturation')
-	#canvasMaterial.set_shader_parameter("tint_color",Color.WHITE)
-	%tintColor.color = Color.WHITE
-	_on_tint_color_color_changed(Color.WHITE)
+
 	%brushSizeValue.value = 10
 	_on_brush_color_color_changed(Color.WHITE)
 	%brushBlend.selected = 0
@@ -188,10 +183,12 @@ func _on_file_selected():
 	originalImage = Image.load_from_file(path)
 	image = originalImage.duplicate()
 	history.clear()
+	
 	currentHistory = 0
 	update()
 	fit()
 	reset_parm()
+	_make_effect_history()
 	#var s = %background.size.x / image.get_size().y
 	#%SubViewportContainer.scale = Vector2.ONE * s
 	#%zoomSlider.value = s
@@ -269,6 +266,10 @@ func _on_revert_button_up() -> void:
 	pass # Replace with function body.
 func _revert():
 	image = originalImage.duplicate()
+	history.clear()
+	currentHistory = 0
+	painterHistory.clear()
+	currentPainterHistory = 0
 	reset_parm()
 	_clear_paint()
 	update()
@@ -384,6 +385,7 @@ func _on_tab_container_tab_changed(tab: int) -> void:
 	currentTab = tab
 	%cropRect.visible = false
 	%pointer.visible = false
+	_clear_paint()
 	#%brush.visible = false
 	#%viewport.render_target_clear_mode = 1
 	match tab:
@@ -392,6 +394,7 @@ func _on_tab_container_tab_changed(tab: int) -> void:
 		3:#draw
 			%pointer.visible = true
 			%viewport.render_target_clear_mode = 0
+			_make_painter_history()
 	pass # Replace with function body.
 
 
@@ -454,16 +457,17 @@ func _reset_pointer():
 			c.clear_points()
 	pointer.reparent(%paintLayer)
 	pointer.visible = currentTab == 3
-	brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-	lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+	brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 		
 func _stamp():
 	_update_brush_mode()
 	pointer.reparent(%paintViewPort,true)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	await get_tree().process_frame
+	#await get_tree().process_frame
 	_reset_pointer()
+	_make_painter_history()
 	
 	
 	
@@ -478,10 +482,11 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			if event.button_index == 1:
 				if currentTab == 3:
 					_reset_pointer()
-					if continuousBrush:
+					if continuousBrush:#for brushes
+						#brush.rotation_degrees = randf_range(-randomBrushRotation, randomBrushRotation)
 						_update_brush_mode()
 						pointer.reparent(%paintViewPort)
-					else:
+					else:# for strokes
 						pointer.reparent(%paintLayer)
 				
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -501,16 +506,14 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 					line.add_point(prev_mouse_position)
 			prev_mouse_position = _get_pointer_pos(event.position)
 			
-			#drawing = false
-			if event.button_index == 1:
-				#pointer.reparent(%paintLayer)
-				#pointer.reparent(%paintViewPort,true)
-				#%paintViewPort.render_target_update_mode = SubViewport.UpdateMode.UPDATE_ONCE
+			if event.button_index == 1:#When left click is release inside image view
+				
 				if currentTab == 3:
 					if !continuousBrush:
 						_stamp()
 					else:
 						_reset_pointer()
+						_make_painter_history()
 						
 			
 	if event is InputEventMouseMotion:
@@ -539,12 +542,24 @@ func _add_neighor_brush_point(pos : Vector2):
 		if c is Line2D:
 			c.add_point(pos)
 
+func _update_neighbor_brushes():
+	for b in brush.get_children():
+		b.visible = true
+		if b is TextureRect:
+			b.size = brush.size
+			b.rotation = brush.rotation
+	for l in line.get_children():
+		l.visible = true
+		if l is Line2D:
+			l.width = line.width
+			l.texture = line.texture
+			l.end_cap_mode = line.end_cap_mode
+			l.begin_cap_mode = line.begin_cap_mode
+			
 func _brush_warp(on):
 	if on:
-		for c in brush.get_children():
-			c.visible = true
-		for c in line.get_children():
-			c.visible = true
+		_update_neighbor_brushes()
+			
 		brush.get_node('e').position.x = -%canvas.size.x
 		brush.get_node('w').position.x = %canvas.size.x
 		brush.get_node('s').position.y = %canvas.size.y
@@ -575,7 +590,7 @@ func _on_brush_color_color_changed(color: Color) -> void:
 func _create_new_image(width : int, height : int, color : Color) -> void:
 	#_on_revert_button_up()
 	path = ""
-	%paintViewPort.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
+	_clear_paint()
 	originalImage = Image.create(width, height, false, Image.FORMAT_RGBA8)
 	originalImage.fill(color)
 	image = originalImage.duplicate()
@@ -587,14 +602,17 @@ func _create_new_image(width : int, height : int, color : Color) -> void:
 func _update_brush_mode():
 	match brushMode:
 		BrushMode.Mix:
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 		BrushMode.Erase:
 			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
 		BrushMode.Mask:
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+		BrushMode.Add:
+			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 			
 	pass
 func _on_brush_blend_tab_changed(tab: int) -> void:
@@ -603,29 +621,20 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 	match tab:
 		0:
 			brushMode = BrushMode.Mix
-			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 			
 		1:
 			brushMode = BrushMode.Erase
-			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+
 		2:
 			brushMode = BrushMode.Mask
 			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-			#paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+
 		3:
 			brushMode = BrushMode.Add
-			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-			brushMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-			lineMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
-		
+			paintLayerMaterial.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+	_reset_pointer()
 	pass # Replace with function b
 	
 
@@ -635,7 +644,7 @@ func _on_brush_size_value_value_changed(value: float) -> void:
 		if c is TextureRect:
 			c.size = brush.size
 			
-	line.width = value * 0.75
+	line.width = brush.size.y
 	for c in line.get_children():
 		if c is Line2D:
 			c.width = line.width
@@ -657,41 +666,94 @@ func _flipY():
 	fit()
 
 func undo():
-	currentHistory -= 1
-	if currentHistory < 0:
-		_revert()
-		return
-	currentHistory = clampi(currentHistory,0,history.size() - 1)
-	apply_history()
-	
+	if currentHistory > 0:
+		currentHistory -= 1
+		_apply_effect_history()
+	else:
+		image = originalImage.duplicate()
+		update()
+		fit()
+		
 func redo():
-	currentHistory += 1
-	currentHistory = clampi(currentHistory,0,history.size() - 1)
-	apply_history()
+	if currentHistory < history.size() - 1:
+		currentHistory += 1
+		_apply_effect_history()
 	
-func apply_history():
+func _apply_effect_history():
+	currentPainterHistory = 0
 	if currentHistory < history.size():
 		image = history[currentHistory]
 	_clear_paint()
 	reset_parm()
 	update()
 	fit()
+
+func _undo_paint():
+	if currentPainterHistory > 0:
+		currentPainterHistory -=1
+		_apply_paint_history()
+	else:
+		currentPainterHistory = -1
+		#_clear_paint()
 	
-func _make_history():
+	
+		
+		
+
+func _apply_paint_history():
+	_clear_paint()
+	var p = painterHistory[currentPainterHistory].duplicate()
+	%paintSnap.texture = ImageTexture.create_from_image(p)
+	
+	%paintSnap.visible = true
+	await get_tree().process_frame
+	await get_tree().process_frame
+	%paintSnap.visible = false
+	#print('applied paint history index '+str(currentPainterHistory))
+	
+func _redo_paint():
+	if currentPainterHistory < painterHistory.size() - 1:
+		currentPainterHistory +=1
+		_apply_paint_history()
+	
+		
+		
+
+func _make_painter_history():
+	var paint = %paintViewPort.get_texture().get_image()
+	
+	painterHistory.append(paint)
+	if painterHistory.size() > undoCount:
+		painterHistory.remove_at(0)
+	currentPainterHistory = painterHistory.size() - 1
+	#print('made paint history index '+str(currentPainterHistory))
+	
+func _make_effect_history():
+	pointer.visible = false
 	image = %viewport.get_texture().get_image()
 	history.append(image)
+	if history.size() > undoCount:
+		history.remove_at(0)
 	currentHistory = history.size() - 1
+
+func apply_paint():
+	_make_effect_history()
+	_clear_paint()
+	update()
 	
 func apply_effect():
-	_make_history()
+	_make_effect_history()
 	_on_frame_option_item_selected(currentEffect)
 	_clear_paint()
 	reset_parm()
 	update()
 	fit()
-	
+
+func _clean():
+	_clear_paint()
+	_make_painter_history()
 func _clear_paint():
-	paintRender.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
+	%paintViewPort.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
 	#paintRender.render_target_update_mode = SubViewport.UPDATE_ONCE
 	prev_mouse_position = Vector2(-1,-1)#
 	pass
@@ -722,6 +784,19 @@ func _effect_float_value_changed(value : String, parm : String, p : Control):
 	var s : HSlider = p.get_node('slider')
 	s.value = value.to_float()
 	
+func _effect_int_value_changed(value : String, parm : String, p : Control):
+	var m = %canvas.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter(parm, value.to_int())
+	
+func _effect_vec2_value_changed(value : String, parm : String, p : Control):
+	var x : LineEdit = p.get_node('x')
+	var y : LineEdit = p.get_node('y')
+	var v : Vector2 = Vector2(x.text.to_float(), y.text.to_float())
+	var m = %canvas.material
+	if m is ShaderMaterial:
+		m.set_shader_parameter(parm, v)
+	
 func _effect_float_slider_changed(value : float, parm : String, p : Control):
 	p.get_node('value').text = '%.2f' % value
 	var m = %canvas.material
@@ -739,8 +814,25 @@ func _on_frame_option_item_selected(index: int) -> void:
 		var v = m.shader.get_shader_uniform_list()
 		print(v)
 		for d in v:
-
 			match d.type:
+				2:#int uniform
+					var p = %uniforms.get_node("int").duplicate()
+					p.get_node('name').text = d.name
+					var valueBox : LineEdit = p.get_node('value')
+					valueBox.text = '%.2f' % 0
+					valueBox.text_submitted.connect( Callable(_effect_int_value_changed).bind(d.name, p))
+					
+					%effectParms.add_child(p)
+				5:#vec2 uniform
+					var p = %uniforms.get_node("vec2").duplicate()
+					p.get_node('name').text = d.name
+					var x : LineEdit = p.get_node('x')
+					var y : LineEdit = p.get_node('y')
+					x.text = '%.2f' % 0
+					y.text = '%.2f' % 0
+					x.text_submitted.connect( Callable(_effect_vec2_value_changed).bind(d.name, p))
+					y.text_submitted.connect( Callable(_effect_vec2_value_changed).bind(d.name, p))
+					%effectParms.add_child(p)
 				1:#bool uniform
 					var p = %uniforms.get_node("bool").duplicate()
 					p.get_node('name').text = d.name
@@ -860,23 +952,32 @@ func _on_grid_toggle_toggled(toggled_on: bool) -> void:
 
 func _on_brush_types_item_selected(index: int) -> void:
 	brushSlot = index
-	continuousBrush = index > 0
 	var brushTexture : Texture2D = %brushTypes.get_item_icon(index)
-	#line.texture = brushTexture
-	#for c in line.get_children():
-		#if c is Line2D:
-			#c.texture = line.texture
+	line.width = brush.size.y
 	brush.texture = brushTexture
 	for c in brush.get_children():
 		if c is TextureRect:
 			c.texture = brush.texture
-	line.visible = brushSlot == 0
-	#%brush.visible = brushSlot > 0
+			
+	line.visible = false
+	continuousBrush = true
+	match brushSlot:
+		0:
+			line.visible = true
+			continuousBrush = false
+			line.end_cap_mode =Line2D.LINE_CAP_ROUND
+			line.begin_cap_mode =Line2D.LINE_CAP_ROUND
+		1:
+			line.visible = true
+			continuousBrush = false
+			line.end_cap_mode =Line2D.LINE_CAP_BOX
+			line.begin_cap_mode =Line2D.LINE_CAP_BOX
+			
+	_update_neighbor_brushes()
+	
+	pass # Replace with function body.
 
-	#nb.texture = brushTexture
-	#sb.texture = brushTexture
-	#eb.texture = brushTexture
-	#wb.texture = brushTexture
-	
-	
+
+func _on_rand_rot_text_submitted(new_text: String) -> void:
+	randomBrushRotation = new_text.to_float()
 	pass # Replace with function body.
