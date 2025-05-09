@@ -20,7 +20,7 @@ HeinDraw is a lightweight image editor addon that provides essential tools neede
 
 * Full Undo/Redo support.
 
-* pixel grid overlay and nearest neighor texture filter mode for editing retro arts
+* pixel grid overlay for retro arts
 
 * More to be added in future
 

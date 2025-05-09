@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c73d4uo2fv012"
-path="res://.godot/imported/untitled.jpg-f83b8512aba2b09fb9b5c1505193ea5b.ctex"
+uid="uid://dpjaqyt0y8aqu"
+path="res://.godot/imported/icon.png-eeb0d2a4afda38b355bc6af8791bb710.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://untitled.jpg"
-dest_files=["res://.godot/imported/untitled.jpg-f83b8512aba2b09fb9b5c1505193ea5b.ctex"]
+source_file="res://addons/hein_draw/icons/icon.png"
+dest_files=["res://.godot/imported/icon.png-eeb0d2a4afda38b355bc6af8791bb710.ctex"]
 
 [params]
 

@@ -14,10 +14,17 @@ var cancled : bool
 @onready var canvas : TextureRect = %canvas
 @onready var paintRender : SubViewport = %paintViewPort
 @onready var brush : TextureRect = %brush
+@onready var brushHandle : Control = %brushHandle
+var brushSize : float = 50
 @onready var line : Line2D = %Line2D
 @onready var pointer : Control = %pointer
 
 var randomBrushRotation : float
+var randBrushSize : float
+var randBrushPos : float
+var useRandBrushCol : bool
+var randColFrom : Color = Color.WHITE
+var randColTo : Color = Color.YELLOW
 
 #Undo Redo
 var undoCount : int = 10
@@ -39,6 +46,7 @@ var seamlessMode : bool
 enum StrokeMode {Press, Release, Continuous}
 enum BrushMode {Mix, Erase, Mask, Add, Multiply}
 var brushMode : BrushMode = BrushMode.Mix
+var brushCol : Color
 var continuousBrush : bool = false
 var brushSlot : int = 0
 
@@ -53,7 +61,7 @@ var currentTab : int
 var cropStart : Vector2
 var cropEnd : Vector2
 
-@onready var frames : Control = %frames
+#@onready var frames : Control = %frames
 @onready var frameOptions : OptionButton = %frameOptions
 var currentFrame : Control
 
@@ -94,7 +102,7 @@ func _load_effects():
 	while file_name !="":
 		if file_name.get_extension() == 'gdshader':
 			var full_path := path.path_join(file_name)
-			print(full_path)
+			#print(full_path)
 			var shader : Shader = load(full_path)
 			if shader is Shader:
 				effectShaders.append(shader)
@@ -112,9 +120,9 @@ func _load_brushes():
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
 	while file_name !="":
-		if file_name.get_extension() in ['png','jpg']:
+		if file_name.get_extension() in ['png','jpg', 'bmp']:
 			var full_path := path.path_join(file_name)
-			print(full_path)
+			#print(full_path)
 			var tex : Texture2D = load(full_path)
 			if tex is Texture2D:
 				%brushTypes.add_item('',tex)
@@ -188,11 +196,11 @@ func _on_file_selected():
 	update()
 	fit()
 	reset_parm()
-	_make_effect_history()
+	#_make_effect_history()
 	#var s = %background.size.x / image.get_size().y
 	#%SubViewportContainer.scale = Vector2.ONE * s
 	#%zoomSlider.value = s
-	update()
+	#update()
 	#_apply_brightness(slider.valcreate_from_image()
 func update():
 	pass
@@ -246,13 +254,13 @@ func save(savePath : String):
 	var e = savePath.get_extension()
 	if e == "jpg" or e == "jpeg":
 		dd = captured.save_jpg(savePath)
-		print("saved as jpg")
+		#print("saved as jpg")
 		#%viewport.
 	if e == "png" :
 		
 		captured.save_png(savePath)
-		print("file saved!")
-		print(savePath)
+		#print("file saved!")
+		#print(savePath)
 	toast(e +" Saved! "+ savePath)
 	path = savePath
 	EditorInterface.get_resource_filesystem().scan_sources()
@@ -475,6 +483,7 @@ func _stamp():
 func _get_pointer_pos(mousePos : Vector2):
 	return mousePos * (1/zoom) - (imageView.position * (1/zoom) )
 
+	
 func _on_canvas_gui_input(event: InputEvent) -> void:
 	
 	if event is InputEventMouseButton:
@@ -483,7 +492,6 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 				if currentTab == 3:
 					_reset_pointer()
 					if continuousBrush:#for brushes
-						#brush.rotation_degrees = randf_range(-randomBrushRotation, randomBrushRotation)
 						_update_brush_mode()
 						pointer.reparent(%paintViewPort)
 					else:# for strokes
@@ -507,33 +515,47 @@ func _on_canvas_gui_input(event: InputEvent) -> void:
 			prev_mouse_position = _get_pointer_pos(event.position)
 			
 			if event.button_index == 1:#When left click is release inside image view
-				
-				if currentTab == 3:
+				if currentTab == 3:# in drawing tab
 					if !continuousBrush:
 						_stamp()
 					else:
 						_reset_pointer()
 						_make_painter_history()
 						
-			
-	if event is InputEventMouseMotion:
-		var pointerPos = _get_pointer_pos(event.position)
-		#var pos = pointerPos - Vector2(25,25)
-		var bp = pointerPos - (brush.size / 2)
-		brush.position = imageView.get_local_mouse_position() - (brush.size / 2)
-		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
-			current_mouse_position = event.global_position
-			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
-		#print(event.button_index)
 	if event is InputEventMouse:
 		var pointerPos = _get_pointer_pos(event.position)
-		var pos = pointerPos
+		var randPos : Vector2
 		#brush.position = pointerPos
 		if drawing:
+			if useRandBrushCol:
+				brush.modulate = randColFrom.lerp(randColTo,randf_range(0,1))
+			else:
+				brush.modulate = brushCol
+				
+			if brushSlot > 1:# only custom brushes can have randomness
+				brush.size = Vector2.ONE * ( brushSize + randf_range(-randBrushSize, randBrushSize) )
+				brush.pivot_offset = brush.size / 2
+				brush.rotation_degrees = randf_range(-randomBrushRotation, randomBrushRotation)
+				randPos = Vector2.from_angle(randf_range(0, 2*PI)) * randBrushPos
+			else:
+				brush.size = Vector2.ONE * brushSize
+				
+			
 			
 			line.add_point(line.get_local_mouse_position())
 			if seamlessMode:
 				_add_neighor_brush_point(pointerPos)
+				
+		_update_neighbor_brushes()
+		%brushHandle.position = imageView.get_local_mouse_position() - (brush.size / 2) + randPos
+				
+	if event is InputEventMouseMotion:
+		
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
+			current_mouse_position = event.global_position
+			imageView.position = init_imageView_position + (current_mouse_position - init_mouse_position)
+		#print(event.button_index)
+		
 	#print("evenr")
 	pass # Replace with function body.
 
@@ -543,14 +565,18 @@ func _add_neighor_brush_point(pos : Vector2):
 			c.add_point(pos)
 
 func _update_neighbor_brushes():
-	for b in brush.get_children():
-		b.visible = true
+	for b in brushHandle.get_children():
 		if b is TextureRect:
+			b.visible = brush.visible
+			b.modulate = brush.modulate
+			b.texture = brush.texture
 			b.size = brush.size
+			b.pivot_offset = brush.pivot_offset
 			b.rotation = brush.rotation
 	for l in line.get_children():
 		l.visible = true
 		if l is Line2D:
+			l.visible = line.visible
 			l.width = line.width
 			l.texture = line.texture
 			l.end_cap_mode = line.end_cap_mode
@@ -559,29 +585,36 @@ func _update_neighbor_brushes():
 func _brush_warp(on):
 	if on:
 		_update_neighbor_brushes()
-			
-		brush.get_node('e').position.x = -%canvas.size.x
-		brush.get_node('w').position.x = %canvas.size.x
-		brush.get_node('s').position.y = %canvas.size.y
-		brush.get_node('n').position.y = -%canvas.size.y
+		brushHandle.get_node('e').position.x = -%canvas.size.x
+		brushHandle.get_node('w').position.x = %canvas.size.x
+		brushHandle.get_node('s').position.y = %canvas.size.y
+		brushHandle.get_node('n').position.y = -%canvas.size.y
 		
 		line.get_node('n').position.y = -%canvas.size.y
 		line.get_node('s').position.y = %canvas.size.y
 		line.get_node('w').position.x = %canvas.size.x
 		line.get_node('e').position.x = -%canvas.size.x
+		
+		for c in brush.get_children():
+			c.visible = true
+		for c in line.get_children():
+			c.visible = true
+			
 	else:
 		for c in brush.get_children():
 			c.visible = false
 		for c in line.get_children():
 			c.visible = false
+	_update_brush_mode()
 	
 func _on_brush_color_color_changed(color: Color) -> void:
+	brushCol = color
 	brush.modulate = color
 	line.default_color = color
 	for c in line.get_children():
 		if c is Line2D:
 			c.default_color = color
-	for c in brush.get_children():
+	for c in brushHandle.get_children():
 		if c is TextureRect:
 			c.modulate = color
 	pass # Replace with function body.
@@ -639,7 +672,9 @@ func _on_brush_blend_tab_changed(tab: int) -> void:
 	
 
 func _on_brush_size_value_value_changed(value: float) -> void:
+	
 	brush.size = Vector2.ONE * value
+	brushSize = value
 	for c in brush.get_children():
 		if c is TextureRect:
 			c.size = brush.size
@@ -650,6 +685,7 @@ func _on_brush_size_value_value_changed(value: float) -> void:
 			c.width = line.width
 			
 	%brushSizeText.text = str(value)
+	_update_neighbor_brushes()
 	pass # Replace with function body.
 
 
@@ -812,7 +848,7 @@ func _on_frame_option_item_selected(index: int) -> void:
 	if m is  ShaderMaterial:
 		m.shader = effectShaders[currentEffect]
 		var v = m.shader.get_shader_uniform_list()
-		print(v)
+		#print(v)
 		for d in v:
 			match d.type:
 				2:#int uniform
@@ -903,7 +939,7 @@ func _on_seamless_mode_toggled(toggled_on: bool) -> void:
 
 
 func _on_save_dialog_canceled() -> void:
-	print('cancled')
+	#print('cancled')
 	cancled = true
 	pass # Replace with function body.
 
@@ -981,3 +1017,27 @@ func _on_brush_types_item_selected(index: int) -> void:
 func _on_rand_rot_text_submitted(new_text: String) -> void:
 	randomBrushRotation = new_text.to_float()
 	pass # Replace with function body.
+
+
+func _on_rand_size_text_submitted(new_text: String) -> void:
+	randBrushSize = new_text.to_float()
+	pass # Replace with function body.
+
+
+func _on_rand_pos_text_changed(new_text: String) -> void:
+	randBrushPos = new_text.to_float()
+	pass # Replace with function body.
+
+
+func _on_use_rand_col_toggled(toggled_on: bool) -> void:
+	useRandBrushCol = toggled_on
+	pass # Replace with function body.
+
+
+func _on_rand_color_from_color_changed(color: Color) -> void:
+	randColFrom = color
+	pass # Replace with function body.
+
+
+func _on_rand_color_to_color_changed(color: Color) -> void:
+	randColTo = color # Replace with function body.
