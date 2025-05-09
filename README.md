@@ -26,5 +26,7 @@ HeinDraw is a lightweight image editor addon that provides essential tools neede
 
 # ScreenShots
 
+  ![Image](https://github.com/HeinThetGit/HeinImageEditor/blob/master/screenshots/adjustment.jpg?raw=true)
   ![Image](https://github.com/HeinThetGit/HeinImageEditor/blob/master/screenshots/paint.jpg?raw=true)
+  ![Image](https://github.com/HeinThetGit/HeinImageEditor/blob/master/screenshots/transform.jpg?raw=true)
   
