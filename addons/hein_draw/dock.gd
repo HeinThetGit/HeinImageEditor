@@ -185,7 +185,8 @@ func reset_parm():
 		m.shader.reset_state()
 		m.reset_state()
 	pass
-func _on_file_selected():
+	
+func _on_file_dialog_file_selected(path: String) -> void:
 	toast(file_dialog.current_path)
 	path = file_dialog.current_path
 	originalImage = Image.load_from_file(path)
@@ -202,6 +203,7 @@ func _on_file_selected():
 	#%zoomSlider.value = s
 	#update()
 	#_apply_brightness(slider.valcreate_from_image()
+
 func update():
 	pass
 	%canvas.texture = ImageTexture.create_from_image(image)
